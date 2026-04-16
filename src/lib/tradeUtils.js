@@ -70,12 +70,15 @@ const isPriceReasonable = (openPrice, currentPrice, maxDeviationPercent = 50) =>
  * Calculates the Opening Price required to achieve a specific P/L at the Current Price.
  */
 export const calculateOpeningPrice = (type, currentPrice, pnl, lotSize, contractSize = null, symbol = null) => {
-  // Determine correct contract size if not provided
-  let finalContractSize = contractSize;
-  if (!finalContractSize && symbol) {
-      finalContractSize = getContractSizeBySymbol(symbol);
+  // FIX: mismo patrón que calculateProfitLoss — priorizar símbolo sobre contract_size de BD
+  let finalContractSize;
+  if (symbol) {
+    finalContractSize = getContractSizeBySymbol(symbol);
+  } else if (contractSize && contractSize > 1) {
+    finalContractSize = contractSize;
+  } else {
+    finalContractSize = 100000;
   }
-  // Default fallback if still null (though caller should ideally provide symbol or size)
   if (!finalContractSize) finalContractSize = 100000;
 
   // Validate inputs
@@ -118,15 +121,24 @@ export const calculateOpeningPrice = (type, currentPrice, pnl, lotSize, contract
  * Updated to support symbol-based contract size detection.
  */
 export const calculateProfitLoss = (type, openPrice, currentPrice, lotSize, contractSize = null, symbol = null) => {
-  // Determine correct contract size
-  let finalContractSize = contractSize;
-  
-  if ((!finalContractSize || finalContractSize === 0) && symbol) {
-      finalContractSize = getContractSizeBySymbol(symbol);
+  // FIX CRÍTICO: el asset.contract_size en la BD puede estar en 1 (valor default del admin form)
+  // para pares forex que necesitan 100,000. Cuando symbol está disponible, siempre
+  // usamos getContractSizeBySymbol() que tiene la lógica correcta por tipo de activo.
+  // Solo usamos el contractSize de la BD si NO tenemos símbolo para resolver.
+  let finalContractSize;
+
+  if (symbol) {
+    // Símbolo disponible → resolver por tipo de activo (fuente de verdad)
+    finalContractSize = getContractSizeBySymbol(symbol);
+  } else if (contractSize && contractSize > 1) {
+    // Sin símbolo → usar el de la BD solo si es un valor razonable (>1)
+    finalContractSize = contractSize;
+  } else {
+    // Fallback último recurso
+    finalContractSize = 100000;
   }
-  
-  // Default fallback
-  if (!finalContractSize) finalContractSize = 100000;
+
+  if (!finalContractSize || finalContractSize === 0) finalContractSize = 100000;
 
   // Validate all inputs
   const oPrice = validateNumber(openPrice, 'openPrice', 0);

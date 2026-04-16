@@ -7,12 +7,22 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, PlusCircle, Trash2, Edit, Save, X } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
+import { getContractSizeBySymbol } from '@/utils/marketDataValidator';
+
+// FIX: auto-sugiere el contract_size correcto según el símbolo ingresado.
+// Evita que se guarden activos con contract_size=1 cuando deberían ser 100,000 (forex).
+const suggestContractSize = (symbol) => {
+  if (!symbol || symbol.trim().length < 3) return 1;
+  return getContractSizeBySymbol(symbol.trim().toUpperCase());
+};
+
+const EMPTY_ASSET = { symbol: '', category: '', contract_size: 1, price: 0, precision: 2, leverage: 100, spread: 0, swap_long: 0, swap_short: 0 };
 
 const AssetSettingsPage = () => {
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingAssetId, setEditingAssetId] = useState(null);
-  const [newAsset, setNewAsset] = useState({ symbol: '', category: '', contract_size: 1, price: 0, precision: 2, leverage: 100, spread: 0, swap_long: 0, swap_short: 0 });
+  const [newAsset, setNewAsset] = useState(EMPTY_ASSET);
   const [isAdding, setIsAdding] = useState(false);
   const { toast } = useToast();
 
@@ -47,9 +57,15 @@ const AssetSettingsPage = () => {
     const parsedValue = ['price', 'contract_size', 'precision', 'leverage', 'spread', 'swap_long', 'swap_short'].includes(name) ? parseFloat(value) : value;
 
     if (id === 'new') {
+      // FIX: al escribir el símbolo, auto-sugerir el contract_size correcto
+      if (name === 'symbol') {
+        const suggested = suggestContractSize(value);
+        setNewAsset(prev => ({ ...prev, symbol: value, contract_size: suggested }));
+      } else {
         setNewAsset(prev => ({ ...prev, [name]: parsedValue }));
+      }
     } else {
-        setAssets(assets.map(asset => asset.id === id ? { ...asset, [name]: parsedValue } : asset));
+      setAssets(assets.map(asset => asset.id === id ? { ...asset, [name]: parsedValue } : asset));
     }
   };
 
@@ -93,7 +109,7 @@ const AssetSettingsPage = () => {
       
       toast({ title: 'Éxito', description: 'Activo agregado correctamente.', className: 'bg-green-600 text-white' });
       setIsAdding(false);
-      setNewAsset({ symbol: '', category: '', contract_size: 1, price: 0, precision: 2, leverage: 100, spread: 0, swap_long: 0, swap_short: 0 });
+      setNewAsset(EMPTY_ASSET);
       await fetchAssets();
     } catch (err) {
       console.error('Error adding asset:', err);
@@ -162,7 +178,7 @@ const AssetSettingsPage = () => {
             <SelectTrigger className="bg-slate-700 border-slate-600"><SelectValue placeholder="Categoría" /></SelectTrigger>
             <SelectContent className="bg-slate-800 border-gray-600 text-white"><SelectGroup>{categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectGroup></SelectContent>
         </Select>
-        <Input placeholder="Tamaño Contrato" type="number" name="contract_size" value={newAsset.contract_size} onChange={(e) => handleInputChange(e, 'new')} className="bg-slate-700 border-slate-600" />
+        <Input placeholder="Tamaño Contrato" type="number" name="contract_size" value={newAsset.contract_size} onChange={(e) => handleInputChange(e, 'new')} className="bg-slate-700 border-slate-600" title={`Auto-detectado: ${newAsset.contract_size} (editable)`} />
         <Input placeholder="Precio Base" type="number" name="price" value={newAsset.price} onChange={(e) => handleInputChange(e, 'new')} className="bg-slate-700 border-slate-600" />
         <Input placeholder="Precisión" type="number" name="precision" value={newAsset.precision} onChange={(e) => handleInputChange(e, 'new')} className="bg-slate-700 border-slate-600" />
         <div className="flex space-x-2">
