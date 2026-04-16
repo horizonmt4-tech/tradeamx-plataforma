@@ -1,0 +1,10 @@
+## Pages
+- [About Us | Tradea](/about): Learn about Tradea
+- [AML & KYC Policy | Tradea](/amlkyc): Anti-Money Laundering and Know Your Customer policies.
+- [Contact Us | Tradea](/contact): Get in touch with Tradea support team.
+- [Cookie Policy | Tradea](/cookies): Information about how Tradea uses cookies.
+- [Frequently Asked Questions | Tradea](/faq): Common questions and answers about Tradea trading platform.
+- [Funding Plans | TradeAMX](/plans): Explore TradeAMX funding plans for professional traders.
+- [Privacy Policy | Tradea](/privacy): Privacy Policy for Tradea services and data collection practices.
+- [Risk Disclosure | Tradea](/riskdisclosure): Important risk disclosure information regarding trading activities.
+- [Terms & Conditions | Tradea](/terms): Terms and Conditions for using Tradea platform and services.

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verificación de cuenta en Tradea México</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f6fa;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Sombra más definida */
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #1e3799; /* Línea de color de marca */
+    }
+    .header h1 {
+      color: #1e3799; /* Color de marca */
+      margin: 0;
+      font-size: 24px;
+    }
+    .content {
+      font-size: 16px;
+      color: #333333;
+      line-height: 1.6;
+    }
+    .button {
+      display: inline-block;
+      background-color: #1e3799; /* Color de marca */
+      color: #ffffff;
+      padding: 14px 28px; /* Botón más grande */
+      margin: 20px 0;
+      border-radius: 8px; /* Borde más redondeado */
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 17px;
+    }
+    .footer {
+      font-size: 12px;
+      color: #999999;
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 15px;
+      border-top: 1px solid #eeeeee;
+    }
+    .warning {
+        font-size: 14px;
+        color: #e74c3c;
+        margin-top: 20px;
+        text-align: center;
+    }
+    .user-name {
+        font-weight: bold;
+        color: #1e3799;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Tradea México</h1>
+    </div>
+    <div class="content">
+      <p>Hola,</p> 
+      <p>Gracias por registrarte en Tradea México. ¡Estamos emocionados de que te unas!</p>
+      <p>Para completar tu registro, por favor haz clic en el siguiente botón para verificar tu correo electrónico:</p>
+      
+      <p style="text-align: center;">
+        <a href="{{ .ConfirmationURL }}" class="button">Verificar correo</a>
+      </p>
+      
+      <p>Si el botón no funciona o la verificación es por tu parte, copia y pega el siguiente enlace en tu navegador:</p>
+      <p style="font-size: 12px; word-break: break-all;"><a href="{{ .ConfirmationURL }}">{{ .ConfirmationURL }}</a></p>
+
+      <div class="warning">
+        <p>Si no creaste esta cuenta, puedes ignorar este mensaje.</p>
+      </div>
+      <p>¡Bienvenido a la comunidad de traders de Tradea México!</p>
+    </div>
+    <div class="footer">
+      <p>&copy; 2025 Tradea México. Todos los derechos reservados.</p>
+      <p><a href="mailto:soporte@tradeamx.net" style="color: #1e3799;">Soporte Técnico</a></p>
+    </div>
+  </div>
+</body>
+</html>
