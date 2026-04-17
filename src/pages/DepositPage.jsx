@@ -18,7 +18,7 @@ import {
   Building2, TrendingUp,
 } from "lucide-react";
 
-// ─── Países disponibles ──────────────────────────────────────────────────────
+import { QRCodeSVG } from "qrcode.react";
 const COUNTRIES = [
   { code: "MX", name: "México",   flag: "🇲🇽" },
   { code: "CO", name: "Colombia", flag: "🇨🇴" },
@@ -32,19 +32,19 @@ const PAYMENT_METHODS = {
     { id: "efectivo", label: "Efectivo",       icon: Banknote,   color: "from-green-600 to-emerald-700", desc: "NU, OXXO, BBVA, 3B, Farmacias, Bodega" },
     { id: "spei",     label: "SPEI",           icon: Building2,  color: "from-blue-600 to-indigo-700",   desc: "Transferencia bancaria — validación 1-2 h" },
     { id: "card",     label: "Tarjeta",        icon: CreditCard, color: "from-violet-600 to-purple-700", desc: "Visa / Mastercard via Stripe" },
-    { id: "crypto",   label: "Cripto (USDT)",  icon: Bitcoin,    color: "from-orange-500 to-yellow-600", desc: "Ethereum Network — Bitso" },
+    { id: "crypto",   label: "Cripto (USDT)",  icon: Bitcoin,    color: "from-orange-500 to-yellow-600", desc: "Red Tron TRC-20 — Bitso" },
   ],
   CO: [
     { id: "card",   label: "Tarjeta",        icon: CreditCard, color: "from-violet-600 to-purple-700", desc: "Visa / Mastercard via Stripe" },
-    { id: "crypto", label: "Cripto (USDT)",  icon: Bitcoin,    color: "from-orange-500 to-yellow-600", desc: "Ethereum Network" },
+    { id: "crypto", label: "Cripto (USDT)",  icon: Bitcoin,    color: "from-orange-500 to-yellow-600", desc: "Red Tron TRC-20" },
   ],
   PE: [
     { id: "card",   label: "Tarjeta",        icon: CreditCard, color: "from-violet-600 to-purple-700", desc: "Visa / Mastercard via Stripe" },
-    { id: "crypto", label: "Cripto (USDT)",  icon: Bitcoin,    color: "from-orange-500 to-yellow-600", desc: "Ethereum Network" },
+    { id: "crypto", label: "Cripto (USDT)",  icon: Bitcoin,    color: "from-orange-500 to-yellow-600", desc: "Red Tron TRC-20" },
   ],
   CL: [
     { id: "card",   label: "Tarjeta",        icon: CreditCard, color: "from-violet-600 to-purple-700", desc: "Visa / Mastercard via Stripe" },
-    { id: "crypto", label: "Cripto (USDT)",  icon: Bitcoin,    color: "from-orange-500 to-yellow-600", desc: "Ethereum Network" },
+    { id: "crypto", label: "Cripto (USDT)",  icon: Bitcoin,    color: "from-orange-500 to-yellow-600", desc: "Red Tron TRC-20" },
   ],
 };
 
@@ -131,10 +131,10 @@ const EFECTIVO_OPTIONS = [
 
 // ─── Datos cripto y WU ───────────────────────────────────────────────────────
 const CRYPTO_DATA = {
-  network: "Ethereum (ERC-20)",
+  network:  "Red Tron (TRC-20)",
   currency: "USDT — Tether USD",
-  address: "0x49F3bCf9495740B4ca5630b03E6196E3589a9579",
-  warning: "Solo debes enviar USDT. Si depositas otra cripto puedes perder los fondos.",
+  address:  "TAvVKPFmyKiBkpFfpJKt4jXHRL7aKmmmMbY",
+  warning:  "Solo debes enviar USDT. Si depositas otra cripto puedes perder los fondos.",
 };
 
 const WU_DATA = {
@@ -150,7 +150,7 @@ const WU_DATA = {
   ],
 };
 
-const WA_NUMBER = "5215512345678";
+const WA_NUMBER = "5215574435022";
 
 // ─── Animaciones ─────────────────────────────────────────────────────────────
 const pv = { initial: { opacity: 0, x: 28 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -28 } };
@@ -674,12 +674,37 @@ const DepositPage = () => {
                 <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-4 text-sm text-orange-300">
                   ⚠️ {CRYPTO_DATA.warning}
                 </div>
+
+                {/* QR CODE */}
+                <div className="flex flex-col items-center bg-white rounded-2xl p-5 gap-3">
+                  <QRCodeSVG
+                    value={CRYPTO_DATA.address}
+                    size={180}
+                    bgColor="#ffffff"
+                    fgColor="#000000"
+                    level="M"
+                    includeMargin={false}
+                  />
+                  <p className="text-xs text-slate-500 font-medium">Escanea para copiar la dirección</p>
+                </div>
+
                 <DataCard label="Red" value={CRYPTO_DATA.network} />
                 <DataCard label="Moneda" value={CRYPTO_DATA.currency} />
                 <DataCard label="Dirección de wallet" value={CRYPTO_DATA.address}
                   onCopy={() => copyText("crypto_addr", CRYPTO_DATA.address)}
                   copied={copiedKey === "crypto_addr"} mono />
-                <WAButton text="Hola, acabo de realizar un depósito en USDT (Cripto)" />
+
+                <ProofUploadSection
+                  amount={depositAmount} setAmount={setDepositAmount}
+                  currency={currency} rate={rate} formatPrice={formatPrice}
+                  file={file} fileName={fileName}
+                  fileInputRef={fileInputRef} onFileChange={handleFileChange}
+                  onSubmit={() => handleProofSubmit("USDT Cripto")}
+                  uploading={uploading}
+                  label="Ya realicé el depósito en cripto"
+                />
+
+                <WAButton text="Hola, acabo de realizar un depósito en USDT (Red Tron TRC-20)" />
               </div>
             </motion.div>
           )}
