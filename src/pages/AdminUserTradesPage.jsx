@@ -46,8 +46,15 @@ const AdminUserTradesPage = () => {
     return () => { supabase.removeChannel(t); supabase.removeChannel(p); };
   }, [userId, fetchTrades, fetchUserData]);
 
-  // ✅ FIX: Pre-llenar correctamente cuando profit_loss es null
   const handleEditClick = (trade) => {
+    // ✅ FIX: El valor que mostramos para editar es el NETO real (profit_loss + pl_adjustment)
+    // Para trades OPEN: mostramos el neto actual
+    // Para trades CLOSED: si pl_adjustment ya es 0 (ya fue corregido), mostramos profit_loss directo
+    const currentNet =
+      trade.status === 'OPEN'
+        ? (Number(trade.profit_loss) || 0) + (Number(trade.pl_adjustment) || 0)
+        : Number(trade.profit_loss) || 0;
+
     setEditingTrade({
       id: trade.id,
       status: trade.status,
@@ -55,13 +62,7 @@ const AdminUserTradesPage = () => {
       type: trade.type,
       profit_loss: trade.profit_loss,
       pl_adjustment: trade.pl_adjustment,
-      // Si profit_loss es null, usar pl_adjustment como fallback, si no hay nada usar '0'
-      newProfitLoss:
-        trade.profit_loss !== null
-          ? String(trade.profit_loss)
-          : trade.pl_adjustment !== null
-          ? String(trade.pl_adjustment)
-          : '0',
+      newProfitLoss: String(currentNet),
     });
   };
 
@@ -74,15 +75,13 @@ const AdminUserTradesPage = () => {
     }
     try {
       if (editingTrade.status === 'OPEN') {
-        // ✅ Llama a la función RPC correcta para trades abiertos
-        // admin_update_open_trade_pl actualiza tanto profit_loss como pl_adjustment
         const { error } = await supabase.rpc('admin_update_open_trade_pl', {
           p_trade_id: editingTrade.id,
           p_new_profit_loss: newPL,
         });
         if (error) throw error;
       } else {
-        // ✅ Llama a la función RPC correcta para trades cerrados
+        // ✅ La RPC ahora resetea pl_adjustment a 0 internamente
         const { error } = await supabase.rpc('admin_update_closed_trade', {
           p_trade_id: editingTrade.id,
           p_new_profit_loss: newPL,
@@ -104,7 +103,12 @@ const AdminUserTradesPage = () => {
 
   const openTrades   = useMemo(() => trades.filter(t => t.status === 'OPEN'),   [trades]);
   const closedTrades = useMemo(() => trades.filter(t => t.status === 'CLOSED'), [trades]);
-  const totalPL      = useMemo(() => closedTrades.reduce((s, t) => s + (Number(t.profit_loss) || 0) + (Number(t.pl_adjustment) || 0), 0), [closedTrades]);
+
+  // ✅ FIX: Para CLOSED solo usamos profit_loss (pl_adjustment ya es 0 tras la corrección)
+  // Para OPEN sumamos ambos porque el ajuste aún está activo
+  const totalPL = useMemo(() =>
+    closedTrades.reduce((s, t) => s + (Number(t.profit_loss) || 0), 0),
+  [closedTrades]);
 
   if (loading) return (
     <div className="flex h-screen items-center justify-center bg-slate-900">
@@ -186,7 +190,12 @@ const AdminUserTradesPage = () => {
                     </TableHeader>
                     <TableBody>
                       {trades.length > 0 ? trades.map(trade => {
-                        const pl = (Number(trade.profit_loss) || 0) + (Number(trade.pl_adjustment) || 0);
+                        // ✅ FIX: OPEN = profit_loss + pl_adjustment (ajuste activo)
+                        //         CLOSED = solo profit_loss (pl_adjustment ya es 0)
+                        const pl = trade.status === 'OPEN'
+                          ? (Number(trade.profit_loss) || 0) + (Number(trade.pl_adjustment) || 0)
+                          : (Number(trade.profit_loss) || 0);
+
                         return (
                           <TableRow key={trade.id} className="border-gray-800 hover:bg-slate-800/50">
                             <TableCell className="font-mono font-bold text-white">{trade.symbol}</TableCell>
@@ -208,7 +217,8 @@ const AdminUserTradesPage = () => {
                               {trade.take_profit ? Number(trade.take_profit).toFixed(5) : '—'}
                             </TableCell>
                             <TableCell className="font-mono text-xs">
-                              {Number(trade.pl_adjustment) !== 0
+                              {/* ✅ Para CLOSED el ajuste ya es 0, solo mostramos en OPEN */}
+                              {trade.status === 'OPEN' && Number(trade.pl_adjustment) !== 0
                                 ? <span className={Number(trade.pl_adjustment) >= 0 ? 'text-blue-400' : 'text-orange-400'}>
                                     {Number(trade.pl_adjustment) >= 0 ? '+' : ''}${Number(trade.pl_adjustment).toFixed(2)}
                                   </span>
@@ -246,7 +256,7 @@ const AdminUserTradesPage = () => {
         </main>
       </div>
 
-      {/* ✅ Edit P/L dialog — corregido */}
+      {/* Edit P/L dialog */}
       {editingTrade && (
         <Dialog open={!!editingTrade} onOpenChange={() => setEditingTrade(null)}>
           <DialogContent className="bg-slate-900 border-gray-700 text-white">
@@ -261,43 +271,42 @@ const AdminUserTradesPage = () => {
             </DialogHeader>
 
             <div className="py-4 space-y-3">
-              {/* P/L actual */}
+              {/* ✅ Muestra el neto real actual (lo que ve el cliente) */}
               <div className="bg-slate-800 rounded-lg p-3 text-sm flex justify-between">
-                <span className="text-gray-400">P/L actual:</span>
-                <span className={`font-mono font-bold ${Number(editingTrade.profit_loss) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {editingTrade.profit_loss !== null
-                    ? `$${Number(editingTrade.profit_loss).toFixed(2)}`
-                    : <span className="text-gray-500 italic">sin valor</span>}
+                <span className="text-gray-400">P/L neto actual (lo que ve el cliente):</span>
+                <span className={`font-mono font-bold ${
+                  (editingTrade.status === 'OPEN'
+                    ? (Number(editingTrade.profit_loss) || 0) + (Number(editingTrade.pl_adjustment) || 0)
+                    : Number(editingTrade.profit_loss) || 0) >= 0
+                  ? 'text-green-400' : 'text-red-400'}`}>
+                  ${(editingTrade.status === 'OPEN'
+                    ? (Number(editingTrade.profit_loss) || 0) + (Number(editingTrade.pl_adjustment) || 0)
+                    : Number(editingTrade.profit_loss) || 0
+                  ).toFixed(2)}
                 </span>
               </div>
 
-              {/* ✅ NUEVO: Mostrar pl_adjustment actual para contexto del admin */}
-              <div className="bg-slate-800 rounded-lg p-3 text-sm flex justify-between">
-                <span className="text-gray-400">Ajuste aplicado (pl_adjustment):</span>
-                <span className={`font-mono font-bold ${Number(editingTrade.pl_adjustment) >= 0 ? 'text-blue-400' : 'text-orange-400'}`}>
-                  {Number(editingTrade.pl_adjustment) !== 0
-                    ? `${Number(editingTrade.pl_adjustment) >= 0 ? '+' : ''}$${Number(editingTrade.pl_adjustment).toFixed(2)}`
-                    : <span className="text-gray-500">$0.00</span>}
-                </span>
-              </div>
-
-              {/* ✅ NUEVO: Nota informativa según tipo de trade */}
-              <div className={`rounded-lg p-2.5 text-xs ${editingTrade.status === 'OPEN' ? 'bg-blue-500/10 text-blue-300 border border-blue-500/20' : 'bg-yellow-500/10 text-yellow-300 border border-yellow-500/20'}`}>
+              {/* Nota informativa */}
+              <div className={`rounded-lg p-2.5 text-xs ${
+                editingTrade.status === 'OPEN'
+                  ? 'bg-blue-500/10 text-blue-300 border border-blue-500/20'
+                  : 'bg-yellow-500/10 text-yellow-300 border border-yellow-500/20'
+              }`}>
                 {editingTrade.status === 'OPEN'
                   ? '⚡ Trade abierto: el nuevo valor se guardará como P/L objetivo. El ajuste se calculará automáticamente.'
-                  : '🔒 Trade cerrado: se actualizará el P/L final y el balance del cliente.'}
+                  : '🔒 Trade cerrado: se actualizará el P/L final, el ajuste quedará en $0.00 y el balance del cliente se corregirá.'}
               </div>
 
               {/* Input nuevo P/L */}
               <div>
-                <label className="text-gray-300 text-sm mb-1.5 block">Nuevo P/L ($)</label>
+                <label className="text-gray-300 text-sm mb-1.5 block">Nuevo P/L neto ($)</label>
                 <Input
                   type="number"
                   step="0.01"
                   value={editingTrade.newProfitLoss}
                   onChange={(e) => setEditingTrade({ ...editingTrade, newProfitLoss: e.target.value })}
                   className="bg-slate-800 border-gray-600 text-white"
-                  placeholder="Ej: 1500.00 o -200.50"
+                  placeholder="Ej: 30.00 o -200.50"
                 />
               </div>
             </div>
