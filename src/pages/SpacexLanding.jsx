@@ -15,7 +15,7 @@ const MENSAJE_WHATSAPP_BASE = 'Hola, vi la información del IPO de SpaceX en el 
 // DATOS REGULATORIOS — reemplaza con datos reales
 const TAURUS_RAZON_SOCIAL = '© 2026 TradeAMX. All rights reserved.';
 const TAURUS_LICENCIA = 'CNBV 981631';
-const TAURUS_DOMICILIO = '[Domicilio fiscal completo]';
+const TAURUS_DOMICILIO = '.';
 
 export default function SpacexLanding() {
   const [tiempoRestante, setTiempoRestante] = useState(calcularTiempo());
@@ -162,7 +162,7 @@ export default function SpacexLanding() {
         <div style={styles.container}>
           <p style={styles.eyebrow}>CÓMO PARTICIPAR</p>
           <h2 style={styles.h2}>
-            Acceso al IPO con tu cuenta Taurus Fx <br />
+            Acceso al IPO con tu cuenta Tradeamx <br />
             <span style={{ color: '#10B981' }}>broker regulado por CNBV</span>
           </h2>
 
