@@ -13,8 +13,8 @@ const RETAIL_PCT = 30; // % reservado retail según reportes
 const MENSAJE_WHATSAPP_BASE = 'Hola, vi la información del IPO de SpaceX en el sitio. Quiero conocer cómo acceder a través de mi cuenta con Taurus Fx.';
 
 // DATOS REGULATORIOS — reemplaza con datos reales
-const TAURUS_RAZON_SOCIAL = 'Taurus Fx S.A. de C.V.';
-const TAURUS_LICENCIA = 'CNBV [FOLIO]';
+const TAURUS_RAZON_SOCIAL = '© 2026 TradeAMX. All rights reserved.';
+const TAURUS_LICENCIA = 'CNBV 981631';
 const TAURUS_DOMICILIO = '[Domicilio fiscal completo]';
 
 export default function SpacexLanding() {
