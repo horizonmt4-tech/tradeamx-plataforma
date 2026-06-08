@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 
 // ============= CONFIG =============
-const WHATSAPP_NUMERO = '5215512345678'; // ← reemplaza
+const WHATSAPP_NUMERO = '525574435022'; // ← reemplaza
 const FECHA_IPO = new Date('2026-06-12T13:30:00-04:00');
 const PRECIO_IPO = 135;
 const VALUACION_OBJETIVO = 1500; // billones USD (1.5T)
