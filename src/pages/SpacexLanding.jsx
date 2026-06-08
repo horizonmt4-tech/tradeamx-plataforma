@@ -10,7 +10,7 @@ const FECHA_IPO = new Date('2026-06-12T13:30:00-04:00');
 const PRECIO_IPO = 135;
 const VALUACION_OBJETIVO = 1500; // billones USD (1.5T)
 const RETAIL_PCT = 30; // % reservado retail según reportes
-const MENSAJE_WHATSAPP_BASE = 'Hola, vi la información del IPO de SpaceX en el sitio. Quiero conocer cómo acceder a través de mi cuenta con Taurus Fx.';
+const MENSAJE_WHATSAPP_BASE = 'Hola, vi la información del OPI de SpaceX en el sitio. Quiero conocer cómo acceder a través de mi cuenta con Taurus Fx.';
 
 // DATOS REGULATORIOS — reemplaza con datos reales
 const TAURUS_RAZON_SOCIAL = '© 2026 TradeAMX. All rights reserved.';
@@ -40,17 +40,17 @@ export default function SpacexLanding() {
         <div style={styles.heroContainer}>
           <div style={styles.heroBadge}>
             <Rocket size={14} />
-            <span>NASDAQ · SPCX · IPO 12 JUNIO 2026</span>
+            <span>NASDAQ · SPCX · OPI 12 JUNIO 2026</span>
           </div>
 
           <h1 style={styles.heroTitle}>
-            El IPO más grande<br />
+            El OPI más grande<br />
             <span style={{ color: '#3B82F6' }}>de la historia bursátil</span>
           </h1>
 
           <p style={styles.heroSubtitle}>
             SpaceX sale a cotizar el 12 de junio en NASDAQ a <strong>${PRECIO_IPO} USD/acción</strong>.<br />
-            Con valuación estimada de <strong>$1.5 billones USD</strong>, superaría el IPO de Saudi Aramco.
+            Con valuación estimada de <strong>$1.5 billones USD</strong>, superaría el OPI de Saudi Aramco.
           </p>
 
           <div style={styles.countdown}>
@@ -76,7 +76,7 @@ export default function SpacexLanding() {
       {/* ============= 2. POR QUÉ ES ÚNICO (DATOS DEL S-1) ============= */}
       <section style={styles.seccion}>
         <div style={styles.container}>
-          <p style={styles.eyebrow}>POR QUÉ ESTE IPO ES DISTINTO</p>
+          <p style={styles.eyebrow}>POR QUÉ ESTE OPI ES DISTINTO</p>
           <h2 style={styles.h2}>
             Datos oficiales del prospecto S-1 <br />
             <span style={{ color: '#94A3B8', fontSize: '0.75em', fontWeight: 500 }}>presentado a la SEC el 20 de mayo 2026</span>
@@ -91,12 +91,12 @@ export default function SpacexLanding() {
             <StatCard
               numero="$75B"
               label="Capital a levantar"
-              detalle="3er IPO más grande de la historia"
+              detalle="3er OPI más grande de la historia"
             />
             <StatCard
               numero="30%"
               label="Reservado para retail"
-              detalle="vs 5-10% en IPOs tradicionales"
+              detalle="vs 5-10% en OPIs tradicionales"
             />
             <StatCard
               numero="555M"
@@ -108,7 +108,7 @@ export default function SpacexLanding() {
           <div style={styles.callout}>
             <AlertTriangle size={20} color="#F59E0B" />
             <p>
-              <strong>Dato relevante:</strong> Según reportes públicos, Elon Musk solicitó reservar hasta 30% de las acciones para inversionistas minoristas, una proporción inusualmente alta para un IPO de este tamaño. Esto puede generar alta demanda en los primeros días de cotización.
+              <strong>Dato relevante:</strong> Según reportes públicos, Elon Musk solicitó reservar hasta 30% de las acciones para inversionistas minoristas, una proporción inusualmente alta para un OPI de este tamaño. Esto puede generar alta demanda en los primeros días de cotización.
             </p>
           </div>
         </div>
@@ -118,7 +118,7 @@ export default function SpacexLanding() {
       <section style={{ ...styles.seccion, background: '#0F1F38' }}>
         <div style={styles.container}>
           <p style={styles.eyebrow}>CONTEXTO HISTÓRICO</p>
-          <h2 style={styles.h2}>Performance de IPOs grandes recientes</h2>
+          <h2 style={styles.h2}>Performance de OPIs grandes recientes</h2>
           <p style={styles.subtitulo}>
             Datos públicos. Los resultados pasados no garantizan rendimientos futuros.
           </p>
@@ -129,7 +129,7 @@ export default function SpacexLanding() {
                 <tr style={styles.tablaHeader}>
                   <th style={styles.th}>Empresa</th>
                   <th style={styles.th}>Año</th>
-                  <th style={styles.th}>Precio IPO</th>
+                  <th style={styles.th}>Precio OPI</th>
                   <th style={styles.th}>Día 1</th>
                   <th style={styles.th}>+1 año</th>
                 </tr>
@@ -151,7 +151,7 @@ export default function SpacexLanding() {
           <div style={styles.callout}>
             <TrendingUp size={20} color="#10B981" />
             <p>
-              <strong>Observación:</strong> Los IPOs tecnológicos grandes con alta expectativa mediática han mostrado históricamente movimientos significativos en los primeros días. El comportamiento de SpaceX dependerá de múltiples factores incluyendo condiciones de mercado, sentimiento del inversionista y noticias específicas de la compañía.
+              <strong>Observación:</strong> Los OPIs tecnológicos grandes con alta expectativa mediática han mostrado históricamente movimientos significativos en los primeros días. El comportamiento de SpaceX dependerá de múltiples factores incluyendo condiciones de mercado, sentimiento del inversionista y noticias específicas de la compañía.
             </p>
           </div>
         </div>
@@ -162,7 +162,7 @@ export default function SpacexLanding() {
         <div style={styles.container}>
           <p style={styles.eyebrow}>CÓMO PARTICIPAR</p>
           <h2 style={styles.h2}>
-            Acceso al IPO con tu cuenta Tradeamx <br />
+            Acceso al OPI con tu cuenta Tradeamx <br />
             <span style={{ color: '#10B981' }}>broker regulado por CNBV</span>
           </h2>
 
@@ -183,7 +183,7 @@ export default function SpacexLanding() {
             <CardPaso
               numero="03"
               titulo="Opera SPCX desde día 1"
-              descripcion="Acceso al IPO el 12 de junio en NASDAQ. Compras acciones reales a tu nombre. Sin apalancamiento forzado. Tú decides cuándo entrar y salir."
+              descripcion="Acceso al OPI el 12 de junio en NASDAQ. Compras acciones reales a tu nombre. Sin apalancamiento forzado. Tú decides cuándo entrar y salir."
               tiempo="12 de junio"
             />
           </div>
@@ -250,7 +250,7 @@ export default function SpacexLanding() {
             respuesta="Sí. Los retiros se procesan a tu cuenta bancaria registrada. El tiempo de retiro depende del método: SPEI (mismo día hábil), SWIFT internacional (2-5 días hábiles)."
           />
           <FAQ
-            pregunta="¿Qué pasa si SPCX baja después del IPO?"
+            pregunta="¿Qué pasa si SPCX baja después del OPI?"
             respuesta="Tú decides cuándo comprar y cuándo vender. Si el precio baja, mantienes tus acciones (igual que con cualquier broker tradicional) o vendes para limitar pérdidas. Como en toda inversión, existe riesgo de pérdida de capital."
           />
           <FAQ
@@ -259,7 +259,7 @@ export default function SpacexLanding() {
           />
           <FAQ
             pregunta="¿Es lo mismo que una cuenta fondeada/challenge?"
-            respuesta="No. Esta es una cuenta de inversión real con tu propio capital. Las cuentas fondeadas (de las prop firms) son para evaluación de habilidades de trading con capital de la firma, y no permiten operar IPOs. Para acceder a SPCX desde el día 1 necesitas una cuenta real con un broker regulado."
+            respuesta="No. Esta es una cuenta de inversión real con tu propio capital. Las cuentas fondeadas (de las prop firms) son para evaluación de habilidades de trading con capital de la firma, y no permiten operar OPIs. Para acceder a SPCX desde el día 1 necesitas una cuenta real con un broker regulado."
           />
           <FAQ
             pregunta="¿Necesito ser inversionista acreditado?"
@@ -272,7 +272,7 @@ export default function SpacexLanding() {
       <section style={styles.ctaFinal}>
         <div style={styles.container}>
           <h2 style={{ ...styles.h2, color: 'white', marginBottom: 12 }}>
-            Faltan {tiempoRestante.dias} días para el IPO
+            Faltan {tiempoRestante.dias} días para el OPI
           </h2>
           <p style={{ fontSize: 18, color: '#CBD5E1', marginBottom: 32, textAlign: 'center', maxWidth: 600, margin: '0 auto 32px' }}>
             La apertura de cuenta toma 24-48 hrs. <br />
@@ -305,7 +305,7 @@ export default function SpacexLanding() {
               La información presentada en este sitio tiene fines exclusivamente informativos y educativos. No constituye recomendación de inversión, oferta de compra/venta de valores, ni asesoría personalizada. Los datos sobre SpaceX provienen de fuentes públicas (prospecto S-1 SEC, reportes Reuters, Bloomberg) y pueden cambiar antes del listado oficial.
             </p>
             <p style={styles.disclaimer}>
-              La fecha del IPO (12 de junio 2026), precio ($135 USD/acción) y términos están sujetos a confirmación final por parte de SpaceX y NASDAQ. Taurus Fx no garantiza la disponibilidad del valor en su plataforma ni resultados específicos de inversión.
+              La fecha del OPI (12 de junio 2026), precio ($135 USD/acción) y términos están sujetos a confirmación final por parte de SpaceX y NASDAQ. Taurus Fx no garantiza la disponibilidad del valor en su plataforma ni resultados específicos de inversión.
             </p>
             <p style={styles.disclaimer}>
               Si requieres atención o tienes alguna queja, comunícate a la UNE de Taurus Fx o a la CONDUSEF al 55 5340 0999.
