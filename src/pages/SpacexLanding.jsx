@@ -6,7 +6,7 @@ import {
 import LeadMagnetModal from '../components/LeadMagnetModal';
 
 // ============= CONFIG =============
-const WHATSAPP_NUMERO = '5574435022'; // ← REEMPLAZA con número real
+const WHATSAPP_NUMERO = '5215574435022'; // ← REEMPLAZA con número real
 const FECHA_IPO = new Date('2026-06-12T13:30:00-04:00');
 const PRECIO_IPO = 135;
 const CAPITAL_OBJETIVO = '1.25T';

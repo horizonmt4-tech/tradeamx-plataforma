@@ -8,7 +8,7 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
-const WHATSAPP_NUMERO = '5215512345678'; // ← MISMO número que en SpacexLanding.jsx
+const WHATSAPP_NUMERO = '5215574435022'; // ← MISMO número que en SpacexLanding.jsx
 
 export default function LeadMagnetModal({ abierto, onClose, origen = 'modal' }) {
   const [form, setForm] = useState({ nombre: '', whatsapp: '', email: '' });
