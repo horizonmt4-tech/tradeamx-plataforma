@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import {
-  Rocket, TrendingUp, Shield, FileCheck, Building2, Clock,
+  Rocket, TrendingUp, Shield, FileCheck, Building2, Clock, Gift,
   ChevronDown, MessageCircle, ArrowRight, AlertTriangle, CheckCircle2, XCircle,
 } from 'lucide-react';
+import LeadMagnetModal from '../components/LeadMagnetModal';
 
 // ============= CONFIG =============
-const WHATSAPP_NUMERO = '525574435022'; // ← REEMPLAZA con número real
+const WHATSAPP_NUMERO = '5574435022'; // ← REEMPLAZA con número real
 const FECHA_IPO = new Date('2026-06-12T13:30:00-04:00');
 const PRECIO_IPO = 135;
 const CAPITAL_OBJETIVO = '1.25T';
@@ -18,18 +19,73 @@ const TAURUS_DOMICILIO = '.';
 
 export default function SpacexLanding() {
   const [tiempoRestante, setTiempoRestante] = useState(calcularTiempo());
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [modalOrigen, setModalOrigen] = useState('manual');
+  const [yaMostrado, setYaMostrado] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => setTiempoRestante(calcularTiempo()), 1000);
     return () => clearInterval(t);
   }, []);
 
+  const abrirModal = (origen = 'manual') => {
+    setModalOrigen(origen);
+    setModalAbierto(true);
+    if (typeof window !== 'undefined' && window.fbq) {
+      window.fbq('track', 'InitiateCheckout', { source: origen });
+    }
+  };
+
+  // Auto-trigger del modal por scroll, exit-intent o tiempo
+  useEffect(() => {
+    if (yaMostrado) return;
+
+    let scrollTriggered = false;
+
+    const handleScroll = () => {
+      if (scrollTriggered) return;
+      const scrolled = window.scrollY;
+      const viewportHeight = window.innerHeight;
+      const totalHeight = document.documentElement.scrollHeight;
+      const pctScrolled = (scrolled + viewportHeight) / totalHeight;
+
+      if (pctScrolled > 0.5) {
+        scrollTriggered = true;
+        abrirModal('scroll_50pct');
+        setYaMostrado(true);
+      }
+    };
+
+    const handleMouseLeave = (e) => {
+      if (e.clientY < 10 && !scrollTriggered) {
+        scrollTriggered = true;
+        abrirModal('exit_intent');
+        setYaMostrado(true);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      if (!scrollTriggered) {
+        scrollTriggered = true;
+        abrirModal('time_60s');
+        setYaMostrado(true);
+      }
+    }, 60000);
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    document.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('mouseleave', handleMouseLeave);
+      clearTimeout(timer);
+    };
+  }, [yaMostrado]);
+
   const abrirWhatsApp = (extra = '', origen = 'directo') => {
-    // Tracking Vercel Analytics
     if (typeof window !== 'undefined' && window.va) {
       try { window.va('event', { name: 'whatsapp_click', origen }); } catch (e) {}
     }
-    // Tracking Meta Pixel
     if (typeof window !== 'undefined' && window.fbq) {
       window.fbq('track', 'Contact', { source: origen });
     }
@@ -40,7 +96,20 @@ export default function SpacexLanding() {
 
   return (
     <div style={styles.contenedor}>
-      
+
+      {/* ============= BANNER URGENTE BONO ============= */}
+      <div style={styles.bannerBono}>
+        <div style={styles.bannerBonoInner}>
+          <span style={styles.bannerBonoEmoji}>🎁</span>
+          <span style={styles.bannerBonoTexto}>
+            <strong>BONO ESPECIAL: 75%</strong> sobre tu depósito inicial · 
+            <span style={styles.bannerBonoCta} onClick={() => abrirModal('banner_top')}>
+              Obtener bono →
+            </span>
+          </span>
+        </div>
+      </div>
+
       {/* ============= 1. HERO ============= */}
       <section style={styles.hero}>
         <div style={styles.heroContainer}>
@@ -68,16 +137,16 @@ export default function SpacexLanding() {
           </div>
 
           <button 
-            onClick={() => abrirWhatsApp('Quiero participar en el OPI', 'hero')} 
+            onClick={() => abrirModal('hero_cta')} 
             style={styles.ctaPrimario}
           >
-            <MessageCircle size={18} />
-            Quiero participar en el OPI
+            <Gift size={18} />
+            Obtener mi bono del 75%
             <ArrowRight size={18} />
           </button>
 
           <p style={styles.heroFooter}>
-            ✓ Asesoría gratuita · ✓ Broker regulado CNBV · ✓ Apertura 100% digital
+            ✓ Bono retirable · ✓ Broker regulado CNBV · ✓ Apertura 100% digital
           </p>
         </div>
         <div style={styles.glowDecoration} />
@@ -149,18 +218,67 @@ export default function SpacexLanding() {
 
           <div style={{ textAlign: 'center', marginTop: 32 }}>
             <button 
-              onClick={() => abrirWhatsApp('Quiero invertir en SpaceX antes del OPI', 'seccion_proyectos')} 
+              onClick={() => abrirModal('seccion_proyectos')} 
               style={styles.ctaIntermedio}
             >
-              <MessageCircle size={18} />
-              Quiero participar antes del OPI
+              <Gift size={18} />
+              Obtener mi bono del 75%
               <ArrowRight size={16} />
             </button>
           </div>
         </div>
       </section>
 
-      {/* ============= 3. DATOS DEL IPO ============= */}
+      {/* ============= 3. SECCIÓN BONO DESTACADA ============= */}
+      <section style={styles.seccionBono}>
+        <div style={styles.container}>
+          <div style={styles.bonoDestacado}>
+            <div style={styles.bonoBadge}>
+              🎁 PROMO ESPECIAL OPI SPACEX
+            </div>
+            
+            <h2 style={styles.bonoTitulo}>
+              Recibe un <span style={styles.bonoNumero}>75%</span> adicional<br />
+              sobre tu depósito inicial
+            </h2>
+
+            <p style={styles.bonoSubtitulo}>
+              Promoción exclusiva para los primeros depositantes durante el OPI de SpaceX. <br />
+              Bono 100% retirable. Sin condiciones de volumen escondidas.
+            </p>
+
+            <div style={styles.bonoEjemplo}>
+              <div style={styles.ejemploColumna}>
+                <div style={styles.ejemploLabel}>Depositas</div>
+                <div style={styles.ejemploValor}>$1,000 USD</div>
+              </div>
+              <div style={styles.ejemploSeparador}>+</div>
+              <div style={styles.ejemploColumna}>
+                <div style={styles.ejemploLabel}>Recibes bono</div>
+                <div style={{ ...styles.ejemploValor, color: '#F59E0B' }}>$750 USD</div>
+              </div>
+              <div style={styles.ejemploSeparador}>=</div>
+              <div style={styles.ejemploColumna}>
+                <div style={styles.ejemploLabel}>Capital operativo</div>
+                <div style={{ ...styles.ejemploValor, color: '#10B981' }}>$1,750 USD</div>
+              </div>
+            </div>
+
+            <button onClick={() => abrirModal('seccion_bono')} style={styles.botonBonoCta}>
+              <Gift size={20} />
+              Reclamar mi bono ahora
+              <ArrowRight size={20} />
+            </button>
+
+            <p style={styles.bonoDisclaimer}>
+              * Promo válida hasta el 12 de junio 2026. Sujeta a apertura y verificación de cuenta. 
+              Términos completos disponibles con tu asesor.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ============= 4. DATOS DEL OPI ============= */}
       <section style={styles.seccion}>
         <div style={styles.container}>
           <p style={styles.eyebrow}>DATOS DEL OPI</p>
@@ -201,7 +319,7 @@ export default function SpacexLanding() {
         </div>
       </section>
 
-      {/* ============= 4. CONTEXTO HISTÓRICO ============= */}
+      {/* ============= 5. CONTEXTO HISTÓRICO ============= */}
       <section style={{ ...styles.seccion, background: '#0F1F38' }}>
         <div style={styles.container}>
           <p style={styles.eyebrow}>CONTEXTO HISTÓRICO</p>
@@ -237,7 +355,7 @@ export default function SpacexLanding() {
         </div>
       </section>
 
-      {/* ============= 5. CÓMO ACCEDES ============= */}
+      {/* ============= 6. CÓMO ACCEDES ============= */}
       <section style={styles.seccion}>
         <div style={styles.container}>
           <p style={styles.eyebrow}>CÓMO PARTICIPAR</p>
@@ -255,8 +373,8 @@ export default function SpacexLanding() {
             />
             <CardPaso
               numero="02"
-              titulo="Fondea tu cuenta"
-              descripcion="Depósito mínimo en MXN o USD vía transferencia SPEI/SWIFT. Tu dinero queda a tu nombre en cuenta segregada."
+              titulo="Fondea + recibe bono 75%"
+              descripcion="Depósito mínimo en MXN o USD vía SPEI/SWIFT. Recibes 75% adicional sobre lo depositado. Bono 100% retirable."
               tiempo="Inmediato"
               destacado
             />
@@ -269,16 +387,16 @@ export default function SpacexLanding() {
           </div>
 
           <div style={{ textAlign: 'center', marginTop: 40 }}>
-            <button onClick={() => abrirWhatsApp('Quiero empezar apertura de cuenta', 'seccion_pasos')} style={styles.ctaPrimario}>
-              <MessageCircle size={18} />
-              Empezar apertura de cuenta
+            <button onClick={() => abrirModal('seccion_pasos')} style={styles.ctaPrimario}>
+              <Gift size={18} />
+              Reclamar mi bono ahora
               <ArrowRight size={18} />
             </button>
           </div>
         </div>
       </section>
 
-      {/* ============= 6. LICENCIA CNBV ============= */}
+      {/* ============= 7. LICENCIA CNBV ============= */}
       <section style={{ ...styles.seccion, background: '#0F1F38' }}>
         <div style={styles.container}>
           <p style={styles.eyebrow}>RESPALDO REGULATORIO</p>
@@ -308,15 +426,19 @@ export default function SpacexLanding() {
         </div>
       </section>
 
-      {/* ============= 7. FAQ ============= */}
+      {/* ============= 8. FAQ ============= */}
       <section style={styles.seccion}>
         <div style={{ ...styles.container, maxWidth: 720 }}>
           <p style={styles.eyebrow}>PREGUNTAS FRECUENTES</p>
           <h2 style={styles.h2}>Lo que necesitas saber</h2>
 
           <FAQ
+            pregunta="¿Cómo funciona el bono del 75%?"
+            respuesta="Al abrir tu cuenta y hacer tu primer depósito, recibes automáticamente un 75% adicional sobre el monto depositado. Por ejemplo, si depositas $1,000 USD recibes $750 USD adicionales. El bono es 100% retirable, no tiene condiciones escondidas de volumen de trading. La promoción es válida hasta el 12 de junio 2026."
+          />
+          <FAQ
             pregunta="¿Cuánto dinero mínimo necesito?"
-            respuesta="El monto mínimo de fondeo es accesible y varía según el tipo de cuenta. Un asesor te explicará las opciones disponibles según tu perfil. Recuerda que solo debes invertir capital que estés dispuesto a destinar a largo plazo."
+            respuesta="El monto mínimo de fondeo es accesible y un asesor te explicará las opciones disponibles según tu perfil. Recuerda que solo debes invertir capital que estés dispuesto a destinar a largo plazo."
           />
           <FAQ
             pregunta="¿El dinero que deposito queda a mi nombre?"
@@ -341,23 +463,23 @@ export default function SpacexLanding() {
         </div>
       </section>
 
-      {/* ============= 8. CTA FINAL ============= */}
+      {/* ============= 9. CTA FINAL ============= */}
       <section style={styles.ctaFinal}>
         <div style={styles.container}>
           <h2 style={styles.h2FinalCta}>
             Faltan {tiempoRestante.dias} días para el OPI
           </h2>
           <p style={styles.ctaFinalTexto}>
-            La apertura de cuenta toma 24-48 hrs. <br />
+            Bono del 75% + apertura digital en 24-48 hrs. <br />
             Inicia el proceso hoy para estar listo el 12 de junio.
           </p>
           <div style={{ textAlign: 'center' }}>
             <button 
-              onClick={() => abrirWhatsApp('Quiero empezar HOY mismo', 'cta_final')} 
+              onClick={() => abrirModal('cta_final')} 
               style={{ ...styles.ctaPrimario, fontSize: 17, padding: '16px 32px' }}
             >
-              <MessageCircle size={20} />
-              Hablar con asesor por WhatsApp
+              <Gift size={20} />
+              Quiero mi bono del 75%
               <ArrowRight size={20} />
             </button>
           </div>
@@ -384,6 +506,9 @@ export default function SpacexLanding() {
               La fecha del OPI (12 de junio 2026), precio (${PRECIO_IPO} USD/acción) y términos están sujetos a confirmación final por SpaceX y NASDAQ. Taurus Fx no garantiza la disponibilidad del valor en su plataforma ni resultados específicos de inversión.
             </p>
             <p style={styles.disclaimer}>
+              <strong>Sobre el bono del 75%:</strong> Promoción válida del 1 al 12 de junio 2026. Sujeta a apertura y verificación KYC de cuenta. El bono es 100% retirable sin condiciones de volumen. Aplica únicamente al primer depósito. Términos completos disponibles con el asesor asignado.
+            </p>
+            <p style={styles.disclaimer}>
               Si requieres atención o tienes alguna queja, comunícate a la UNE de Taurus Fx o a la CONDUSEF al 55 5340 0999.
             </p>
           </div>
@@ -402,21 +527,28 @@ export default function SpacexLanding() {
       {/* ============= STICKY BUTTON WHATSAPP ============= */}
       <div className="sticky-whatsapp-bar" style={styles.stickyBar}>
         <div style={styles.urgencyMicrocopy}>
-          🟢 Asesores disponibles · Respuesta en minutos
+          🟢 Bono del 75% disponible · Asesores activos ahora
         </div>
         <button 
-          onClick={() => abrirWhatsApp('Quiero información del OPI de SpaceX', 'sticky')} 
+          onClick={() => abrirModal('sticky')} 
           className="sticky-whatsapp-btn"
           style={styles.stickyButton}
         >
-          <MessageCircle size={20} />
+          <Gift size={20} />
           <div style={styles.stickyTextBox}>
-            <div style={styles.stickyMini}>Asesoría gratuita</div>
-            <div style={styles.stickyMain}>Hablar con asesor por WhatsApp</div>
+            <div style={styles.stickyMini}>Promo especial OPI</div>
+            <div style={styles.stickyMain}>Obtener bono del 75%</div>
           </div>
           <ArrowRight size={18} />
         </button>
       </div>
+
+      {/* ============= MODAL LEAD MAGNET ============= */}
+      <LeadMagnetModal 
+        abierto={modalAbierto} 
+        onClose={() => setModalAbierto(false)}
+        origen={modalOrigen}
+      />
 
     </div>
   );
@@ -540,7 +672,40 @@ const styles = {
     background: '#0A1628',
     color: 'white',
     minHeight: '100vh',
-    paddingBottom: 100, // espacio para sticky button
+    paddingBottom: 100,
+  },
+
+  // BANNER SUPERIOR DEL BONO
+  bannerBono: {
+    background: 'linear-gradient(90deg, #F59E0B 0%, #EF4444 100%)',
+    padding: '8px 16px',
+    textAlign: 'center',
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
+  },
+  bannerBonoInner: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    maxWidth: 1100,
+  },
+  bannerBonoEmoji: {
+    fontSize: 18,
+  },
+  bannerBonoTexto: {
+    fontSize: 'clamp(11px, 2.5vw, 14px)',
+    color: 'white',
+    fontWeight: 500,
+  },
+  bannerBonoCta: {
+    marginLeft: 6,
+    fontWeight: 800,
+    textDecoration: 'underline',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
   },
 
   // HERO
@@ -618,14 +783,14 @@ const styles = {
     alignItems: 'center',
     gap: 10,
     padding: 'clamp(14px, 4vw, 16px) clamp(22px, 5vw, 32px)',
-    background: '#25D366',
+    background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
     color: 'white',
     border: 'none',
     borderRadius: 10,
     fontSize: 'clamp(15px, 4vw, 17px)',
     fontWeight: 700,
     cursor: 'pointer',
-    boxShadow: '0 4px 16px rgba(37, 211, 102, 0.4)',
+    boxShadow: '0 4px 16px rgba(245, 158, 11, 0.4)',
     fontFamily: 'inherit',
     minHeight: 52,
   },
@@ -634,14 +799,14 @@ const styles = {
     alignItems: 'center',
     gap: 8,
     padding: '12px 24px',
-    background: '#25D366',
+    background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
     color: 'white',
     border: 'none',
     borderRadius: 8,
     fontSize: 15,
     fontWeight: 700,
     cursor: 'pointer',
-    boxShadow: '0 4px 16px rgba(37, 211, 102, 0.3)',
+    boxShadow: '0 4px 16px rgba(245, 158, 11, 0.3)',
     fontFamily: 'inherit',
     minHeight: 48,
   },
@@ -819,6 +984,114 @@ const styles = {
     marginTop: 8,
   },
 
+  // SECCIÓN BONO DESTACADA
+  seccionBono: {
+    padding: 'clamp(48px, 10vw, 80px) clamp(16px, 5vw, 24px)',
+    background: 'radial-gradient(ellipse at center, rgba(245, 158, 11, 0.08) 0%, transparent 70%)',
+  },
+  bonoDestacado: {
+    background: 'linear-gradient(135deg, #1E293B 0%, #0F1F38 100%)',
+    border: '1px solid rgba(245, 158, 11, 0.3)',
+    borderRadius: 20,
+    padding: 'clamp(32px, 6vw, 56px)',
+    textAlign: 'center',
+    maxWidth: 800,
+    margin: '0 auto',
+    boxShadow: '0 20px 60px rgba(245, 158, 11, 0.1)',
+  },
+  bonoBadge: {
+    display: 'inline-block',
+    padding: '6px 14px',
+    background: 'linear-gradient(90deg, #F59E0B, #EF4444)',
+    color: 'white',
+    borderRadius: 999,
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: '0.05em',
+    marginBottom: 20,
+  },
+  bonoTitulo: {
+    fontSize: 'clamp(28px, 5vw, 44px)',
+    fontWeight: 800,
+    color: 'white',
+    lineHeight: 1.15,
+    marginBottom: 16,
+    letterSpacing: '-0.02em',
+  },
+  bonoNumero: {
+    background: 'linear-gradient(90deg, #F59E0B, #EF4444)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    fontSize: '1.2em',
+  },
+  bonoSubtitulo: {
+    fontSize: 'clamp(14px, 2.5vw, 17px)',
+    color: '#CBD5E1',
+    lineHeight: 1.6,
+    marginBottom: 32,
+    maxWidth: 600,
+    margin: '0 auto 32px',
+  },
+  bonoEjemplo: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 'clamp(8px, 2vw, 16px)',
+    padding: 'clamp(16px, 4vw, 24px)',
+    background: 'rgba(10, 22, 40, 0.6)',
+    borderRadius: 12,
+    marginBottom: 32,
+    flexWrap: 'wrap',
+  },
+  ejemploColumna: {
+    textAlign: 'center',
+    minWidth: 80,
+  },
+  ejemploLabel: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    fontWeight: 600,
+  },
+  ejemploValor: {
+    fontSize: 'clamp(18px, 4vw, 24px)',
+    fontWeight: 800,
+    color: 'white',
+    fontFamily: 'monospace',
+  },
+  ejemploSeparador: {
+    fontSize: 'clamp(20px, 4vw, 28px)',
+    color: '#475569',
+    fontWeight: 700,
+  },
+  botonBonoCta: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: 'clamp(14px, 4vw, 18px) clamp(28px, 6vw, 40px)',
+    background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
+    color: 'white',
+    border: 'none',
+    borderRadius: 12,
+    fontSize: 'clamp(15px, 4vw, 18px)',
+    fontWeight: 800,
+    cursor: 'pointer',
+    boxShadow: '0 12px 32px rgba(245, 158, 11, 0.4)',
+    fontFamily: 'inherit',
+    minHeight: 56,
+    marginBottom: 16,
+  },
+  bonoDisclaimer: {
+    fontSize: 11,
+    color: '#64748B',
+    lineHeight: 1.5,
+    maxWidth: 500,
+    margin: '0 auto',
+  },
+
   // STATS GENERALES
   gridStats: {
     display: 'grid',
@@ -877,8 +1150,8 @@ const styles = {
     padding: 28,
   },
   cardDestacado: {
-    border: '1px solid #3B82F6',
-    boxShadow: '0 0 32px rgba(59, 130, 246, 0.15)',
+    border: '1px solid #F59E0B',
+    boxShadow: '0 0 32px rgba(245, 158, 11, 0.15)',
   },
   cardNumero: {
     fontSize: 14,
@@ -1090,9 +1363,9 @@ const styles = {
   urgencyMicrocopy: {
     textAlign: 'center',
     fontSize: 11,
-    color: '#94A3B8',
+    color: '#F59E0B',
     marginBottom: 8,
-    fontWeight: 600,
+    fontWeight: 700,
   },
   stickyButton: {
     display: 'flex',
@@ -1102,12 +1375,12 @@ const styles = {
     maxWidth: 500,
     margin: '0 auto',
     padding: '14px 18px',
-    background: '#25D366',
+    background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
     color: 'white',
     border: 'none',
     borderRadius: 12,
     cursor: 'pointer',
-    boxShadow: '0 8px 24px rgba(37, 211, 102, 0.5)',
+    boxShadow: '0 8px 24px rgba(245, 158, 11, 0.5)',
     fontFamily: 'inherit',
   },
   stickyTextBox: {

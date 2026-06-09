@@ -52,6 +52,8 @@ import AdminWithdrawalsPage from '@/pages/admin/AdminWithdrawalsPage';
 import RecoveryPanelPage from '@/pages/admin/RecoveryPanelPage';
 import PaymentRecoveryPage from '@/pages/admin/PaymentRecoveryPage';
 import StripeWebhookStatusPage from '@/pages/admin/StripeWebhookStatusPage';
+import AdminLeadsSpacex from './pages/AdminLeadsSpacex';
+
 
 // Components & Layout
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -149,6 +151,8 @@ function AppContent() {
                 <Route path="/admin/withdrawals" element={<AdminRoute><AdminWithdrawalsPage /></AdminRoute>} />
                 <Route path="/admin/payment-recovery" element={<ProtectedRoute><AdminRoute><PaymentRecoveryPage /></AdminRoute></ProtectedRoute>} />
                 <Route path="/admin/stripe-webhook-status" element={<ProtectedRoute><AdminRoute><StripeWebhookStatusPage /></AdminRoute></ProtectedRoute>} />
+                  <Route path="/admin-leads-spacex" element={<AdminLeadsSpacex />} />
+
 
                 {/* Super Admin Routes */}
                 <Route path="/admin/dashboard" element={<SuperAdminRoute><SuperAdminDashboardPage /></SuperAdminRoute>} />
