@@ -32,7 +32,7 @@ export default function AdminLeadsSpacex() {
     // 2. Verifica que el usuario sea admin (ajusta el nombre de tu tabla si es distinto)
     const { data: perfil, error } = await supabase
       .from('profiles') // ← ajusta si tu tabla se llama distinto (users, usuarios, etc.)
-      .select('is_admin, email, nombre')
+      .select('is_admin, email, full_name')
       .eq('id', session.user.id)
       .single();
 
