@@ -51,8 +51,18 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 w-full z-50 glass-effect border-b border-white/5 bg-[#0a0f1a]/95 backdrop-blur-md h-20 transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+    // FIX iOS: paddingTop con safe-area-inset-top para que el navbar completo
+    // (incluyendo el contenido) respete el notch / Dynamic Island del iPhone.
+    // La altura total del nav ahora es 80px + el safe-area, en vez de quedar
+    // 80px fijos que en iOS se recortan parcialmente bajo la barra de estado.
+    <nav
+      className="fixed top-0 w-full z-50 glass-effect border-b border-white/5 bg-[#0a0f1a]/95 backdrop-blur-md transition-all duration-300"
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+        height: 'calc(5rem + env(safe-area-inset-top))',
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20">
         <div className="flex justify-between items-center h-full">
           <motion.div
             className="flex items-center"
@@ -120,7 +130,6 @@ const Navbar = () => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.5 }}
                   >
-                    {/* ✅ Corregido: /signup → /register */}
                     <Link to="/register">
                       <Button className="bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold shadow-lg shadow-yellow-900/20">
                         <UserPlus className="w-4 h-4 mr-2" />
@@ -168,7 +177,10 @@ const Navbar = () => {
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            className="md:hidden absolute top-20 left-0 right-0 bg-[#0f172a] border-b border-gray-800 shadow-2xl"
+            // FIX iOS: top dinámico = altura real del navbar (80px + safe-area)
+            // en vez de un valor fijo "top-20" que no consideraba el notch.
+            className="md:hidden absolute left-0 right-0 bg-[#0f172a] border-b border-gray-800 shadow-2xl"
+            style={{ top: 'calc(5rem + env(safe-area-inset-top))' }}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
@@ -204,7 +216,6 @@ const Navbar = () => {
                         Login
                       </Button>
                     </Link>
-                    {/* ✅ Corregido: /signup → /register */}
                     <Link to="/register" onClick={closeMobileMenu}>
                       <Button className="w-full bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold h-12 text-lg">
                         Sign Up
