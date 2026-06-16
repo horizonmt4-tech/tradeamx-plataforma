@@ -150,15 +150,15 @@ const CloseTradeDialog = ({ trade, isOpen, onClose, onConfirm, isMarketOpen }) =
                 Detalle de Ganancia/Pérdida
               </div>
 
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400 text-sm">P/L Calculado:</span>
-                <span className={cn(
-                  'font-mono font-bold',
-                  plBreakdown.calculatedPL >= 0 ? 'text-green-400' : 'text-red-400'
-                )}>
-                  ${plBreakdown.calculatedPL.toFixed(2)}
-                </span>
-              </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 text-sm">P/L Calculado:</span>
+                  <span className={cn(
+                    'font-mono font-bold',
+                    plBreakdown.calculatedPL >= 0 ? 'text-green-400' : 'text-red-400'
+                  )}>
+                    ${plBreakdown.calculatedPL.toFixed(2)}
+                  </span>
+                </div>
 
               <div className="flex justify-between items-center border-t border-slate-600 pt-3 mt-2">
                 <span className="text-white font-bold text-lg">P/L FINAL:</span>
