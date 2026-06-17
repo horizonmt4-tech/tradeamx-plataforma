@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Gift, Loader2, CheckCircle2, MessageCircle } from 'lucide-react';
+import { X, Gem, Loader2, CheckCircle2, MessageCircle } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 // Usa el cliente Supabase que ya tienes
@@ -8,7 +8,7 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
-const WHATSAPP_NUMERO = '5215574435022'; // ← MISMO número que en SpacexLanding.jsx
+const WHATSAPP_NUMERO = '5215574435022'; // ← MISMO número que en MineralesLanding.jsx
 
 export default function LeadMagnetModal({ abierto, onClose, origen = 'modal' }) {
   const [form, setForm] = useState({ nombre: '', whatsapp: '', email: '' });
@@ -54,7 +54,7 @@ export default function LeadMagnetModal({ abierto, onClose, origen = 'modal' }) 
 
     try {
       const utms = getUTMs();
-      const { error: dbError } = await supabase.from('leads_spacex_bono').insert({
+      const { error: dbError } = await supabase.from('leads_minerales').insert({
         nombre: form.nombre.trim(),
         whatsapp: form.whatsapp.replace(/\D/g, ''),
         email: form.email.trim() || null,
@@ -69,7 +69,7 @@ export default function LeadMagnetModal({ abierto, onClose, origen = 'modal' }) 
       // Tracking Meta Pixel
       if (typeof window !== 'undefined' && window.fbq) {
         window.fbq('track', 'Lead', {
-          content_name: 'IPO SpaceX Bono 75%',
+          content_name: 'Inversion Minerales Litio Cobre',
           value: 1,
           currency: 'USD',
         });
@@ -85,7 +85,7 @@ export default function LeadMagnetModal({ abierto, onClose, origen = 'modal' }) 
       // Abrir WhatsApp después de 2 segundos
       setTimeout(() => {
         const mensaje = encodeURIComponent(
-          `Hola, soy ${form.nombre}. Vengo del IPO de SpaceX y quiero mi bono del 75% sobre depósito inicial.`
+          `Hola, soy ${form.nombre}. Vi su info sobre invertir en metales del futuro (litio y cobre) y quiero más detalles.`
         );
         window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${mensaje}`, '_blank');
       }, 2000);
@@ -115,7 +115,7 @@ export default function LeadMagnetModal({ abierto, onClose, origen = 'modal' }) 
   return (
     <div style={estilos.overlay} onClick={onClose}>
       <div style={estilos.modal} onClick={(e) => e.stopPropagation()}>
-        
+
         {/* Botón cerrar */}
         <button onClick={onClose} style={estilos.cerrar}>
           <X size={20} />
@@ -123,18 +123,18 @@ export default function LeadMagnetModal({ abierto, onClose, origen = 'modal' }) 
 
         {!exito ? (
           <>
-            {/* Header con bono */}
+            {/* Header */}
             <div style={estilos.headerBono}>
               <div style={estilos.iconoCircle}>
-                <Gift size={32} color="white" />
+                <Gem size={32} color="white" />
               </div>
               <h2 style={estilos.tituloModal}>
-                Bono especial del <span style={{ color: '#F59E0B' }}>75%</span><br />
-                sobre tu depósito inicial
+                Opera los <span style={{ color: '#22D3EE' }}>metales del futuro</span><br />
+                con la estructura de Taurus Fx
               </h2>
               <p style={estilos.subtituloModal}>
-                Promo exclusiva por el IPO de SpaceX. <br />
-                Deja tus datos y un asesor te explicará cómo obtenerlo.
+                Litio, cobre y níquel: la transición energética ya está moviendo el mercado. <br />
+                Deja tus datos y un asesor te explica cómo tomar posición.
               </p>
             </div>
 
@@ -188,7 +188,7 @@ export default function LeadMagnetModal({ abierto, onClose, origen = 'modal' }) 
                   </>
                 ) : (
                   <>
-                    Quiero mi bono del 75%
+                    Quiero más información
                     <MessageCircle size={18} />
                   </>
                 )}
@@ -196,7 +196,7 @@ export default function LeadMagnetModal({ abierto, onClose, origen = 'modal' }) 
 
               <p style={estilos.privacidad}>
                 🔒 Tus datos están protegidos. No spam. <br />
-                Al enviar aceptas el <a href="/aviso-privacidad" style={{ color: '#60A5FA' }}>aviso de privacidad</a>.
+                Al enviar aceptas el <a href="/aviso-privacidad" style={{ color: '#22D3EE' }}>aviso de privacidad</a>.
               </p>
             </form>
           </>
@@ -210,7 +210,7 @@ export default function LeadMagnetModal({ abierto, onClose, origen = 'modal' }) 
               Tus datos quedaron registrados. <br />
               Te estamos redirigiendo a WhatsApp con un asesor...
             </p>
-            <Loader2 size={24} className="spin" color="#3B82F6" style={{ marginTop: 20 }} />
+            <Loader2 size={24} className="spin" color="#22D3EE" style={{ marginTop: 20 }} />
           </div>
         )}
       </div>
@@ -259,7 +259,7 @@ const estilos = {
     maxHeight: '90vh',
     overflow: 'auto',
     position: 'relative',
-    boxShadow: '0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(59, 130, 246, 0.1)',
+    boxShadow: '0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(34, 211, 238, 0.1)',
     animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
   },
   cerrar: {
@@ -281,18 +281,18 @@ const estilos = {
   headerBono: {
     padding: '32px 24px 20px',
     textAlign: 'center',
-    background: 'linear-gradient(180deg, rgba(245, 158, 11, 0.1) 0%, transparent 100%)',
+    background: 'linear-gradient(180deg, rgba(34, 211, 238, 0.1) 0%, transparent 100%)',
   },
   iconoCircle: {
     width: 64,
     height: 64,
     borderRadius: '50%',
-    background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
+    background: 'linear-gradient(135deg, #22D3EE, #2563EB)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     margin: '0 auto 16px',
-    boxShadow: '0 8px 24px rgba(245, 158, 11, 0.4)',
+    boxShadow: '0 8px 24px rgba(34, 211, 238, 0.4)',
   },
   tituloModal: {
     fontSize: 22,
@@ -347,7 +347,7 @@ const estilos = {
   botonEnviar: {
     width: '100%',
     padding: '14px 20px',
-    background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
+    background: 'linear-gradient(135deg, #22D3EE, #2563EB)',
     color: 'white',
     border: 'none',
     borderRadius: 10,
@@ -360,7 +360,7 @@ const estilos = {
     gap: 8,
     fontFamily: 'inherit',
     minHeight: 52,
-    boxShadow: '0 8px 24px rgba(245, 158, 11, 0.3)',
+    boxShadow: '0 8px 24px rgba(34, 211, 238, 0.3)',
   },
   privacidad: {
     fontSize: 11,

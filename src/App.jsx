@@ -40,7 +40,7 @@ import DepositCancelPage from '@/pages/DepositCancelPage';
 import CalendarPage from '@/pages/CalendarPage';
 import AnalysisPage from '@/pages/AnalysisPage';
 import NewsPage from '@/pages/NewsPage';
-import SpacexLanding from '@/pages/SpacexLanding'; // ← NUEVO
+import MineralesLanding from '@/pages/MineralesLanding'; // ← NUEVO
 
 // Admin Settings Pages
 import PlanSettingsPage from '@/pages/admin/PlanSettingsPage';
@@ -100,7 +100,7 @@ function AppContent() {
 
       <Routes>
         {/* ── Landing SpaceX: sin header ni layout global ── */}
-        <Route path="/SpacexLanding" element={<SpacexLanding />} />
+        <Route path="/MineralesLanding" element={<MineralesLanding />} />
 
         {/* ── Todo lo demás: con header ── */}
         <Route path="*" element={
