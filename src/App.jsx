@@ -41,6 +41,8 @@ import CalendarPage from '@/pages/CalendarPage';
 import AnalysisPage from '@/pages/AnalysisPage';
 import NewsPage from '@/pages/NewsPage';
 import MineralesLanding from '@/pages/MineralesLanding'; // ← NUEVO
+import RegulationPage from '@/pages/RegulationPage';
+
 
 // Admin Settings Pages
 import PlanSettingsPage from '@/pages/admin/PlanSettingsPage';
@@ -120,6 +122,7 @@ function AppContent() {
                 <Route path="/check-email" element={<CheckEmailPage />} />
                 <Route path="/email-confirmation" element={<EmailConfirmationPage />} />
                 <Route path="/terms" element={<TermsPage />} />
+                <Route path="/regulacion" element={<RegulationPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/legal" element={<LegalPage />} />
                 <Route path="/cookies" element={<CookiesPage />} />
