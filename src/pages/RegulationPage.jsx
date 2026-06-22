@@ -17,9 +17,9 @@ import { ShieldCheck, Building2, Mail, Globe, MapPin, AlertTriangle, FileText, S
 const COMPANY = {
   brand: 'TradeWeb Europe Limited',
   legalNote: 'Plataforma de evaluación de traders',
-  status: 'Cuentas de simulación',
+  status: 'Empresa Regulada',
   jurisdiction: 'Reino Unido',
-  email: 'ernie.igbinosun@tradeweb.com',
+  email: 'Soporte@tradeamx.net',
   website: 'www.tradeamx.net',
   address: '1 fore Street Avenue, Londres EC2Y 9DT REINO UNIDO',
 };
@@ -43,6 +43,7 @@ const SimulationNotice = () => (
     <AlertTriangle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
     <div className="text-sm text-slate-700 leading-relaxed">
       <p className="font-semibold text-slate-900 mb-1">Estatus regulatorio</p>
+      <p>Número de Regulación: 193705</p>
     </div>
   </div>
 );
