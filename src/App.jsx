@@ -1,27 +1,3 @@
-// ── CAMBIOS EN App.jsx ────────────────────────────────────────
-// Solo muestra las líneas que cambian vs el App.jsx actual.
-// Aplica estos cambios manualmente en tu App.jsx existente.
-// ─────────────────────────────────────────────────────────────
-
-// 1. AGREGAR IMPORTS (junto a los otros imports de páginas)
-
-// 2. CAMBIAR la ruta de super-admin por manager:
-//    ANTES:
-//    <Route path="/admin/dashboard" element={<SuperAdminRoute><SuperAdminDashboardPage /></SuperAdminRoute>} />
-//    <Route path="/super-admin"     element={<SuperAdminRoute><SuperAdminDashboardPage /></SuperAdminRoute>} />
-//
-//    DESPUÉS:
-//    <Route path="/admin/dashboard" element={<SuperAdminRoute><ManagerDashboardPage /></SuperAdminRoute>} />
-//    <Route path="/super-admin"     element={<SuperAdminRoute><ManagerDashboardPage /></SuperAdminRoute>} />
-//    <Route path="/manager"         element={<SuperAdminRoute><ManagerDashboardPage /></SuperAdminRoute>} />
-
-// 3. AGREGAR ruta de ventas (en la sección de rutas protegidas):
-//    <Route path="/ventas" element={<VentasRoute><VentasPage /></VentasRoute>} />
-
-// ─────────────────────────────────────────────────────────────
-// App.jsx COMPLETO con todos los cambios aplicados:
-// ─────────────────────────────────────────────────────────────
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
@@ -66,7 +42,7 @@ import AnalysisPage from '@/pages/AnalysisPage';
 import NewsPage from '@/pages/NewsPage';
 import MineralesLanding from '@/pages/MineralesLanding';
 
-// ── NUEVAS PÁGINAS ────────────────────────────────────────────
+// Nuevas páginas multi-oficina
 import VentasPage from '@/pages/ventas/VentasPage';
 import ManagerDashboardPage from '@/pages/admin/ManagerDashboardPage';
 
@@ -85,7 +61,7 @@ import StripeWebhookStatusPage from '@/pages/admin/StripeWebhookStatusPage';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminRoute from '@/components/AdminRoute';
 import SuperAdminRoute from '@/components/SuperAdminRoute';
-import VentasRoute from '@/components/VentasRoute'; // ← NUEVO
+import VentasRoute from '@/components/VentasRoute';
 import GlobalHeader from '@/components/GlobalHeader';
 import { Toaster } from '@/components/ui/toaster';
 import UpdateNotification from '@/components/UpdateNotification';
@@ -120,9 +96,10 @@ function AppContent() {
       <UpdateNotification isUpdateAvailable={isUpdateAvailable} />
 
       <Routes>
-        {/* Landing SpaceX: sin header */}
-          <Route path="/MineralesLanding" element={<MineralesLanding />} />
-        {/* Todo lo demás: con header */}
+        {/* ── Landings sin header (rutas independientes) ── */}
+        <Route path="/MineralesLanding" element={<MineralesLanding />} />
+
+        {/* ── Todo lo demás: con header ── */}
         <Route path="*" element={
           <>
             <HeaderWrapper />
@@ -164,10 +141,10 @@ function AppContent() {
                 <Route path="/change-password" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
                 <Route path="/support" element={<ProtectedRoute><SupportPage /></ProtectedRoute>} />
 
-                {/* ── VENTAS (nuevo) ── */}
+                {/* Ventas */}
                 <Route path="/ventas" element={<VentasRoute><VentasPage /></VentasRoute>} />
 
-                {/* Retención (admin actual — renombrado internamente) */}
+                {/* Retención */}
                 <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
                 <Route path="/admin/user/:userId/trades" element={<AdminRoute><AdminUserTradesPage /></AdminRoute>} />
                 <Route path="/admin/user/:userId/trades/edit" element={<AdminRoute><AdminEditUserTradesPage /></AdminRoute>} />
@@ -175,17 +152,17 @@ function AppContent() {
                 <Route path="/admin/payment-recovery" element={<ProtectedRoute><AdminRoute><PaymentRecoveryPage /></AdminRoute></ProtectedRoute>} />
                 <Route path="/admin/stripe-webhook-status" element={<ProtectedRoute><AdminRoute><StripeWebhookStatusPage /></AdminRoute></ProtectedRoute>} />
 
-                {/* Manager (ex super-admin) */}
+                {/* Manager */}
+                <Route path="/manager"         element={<SuperAdminRoute><ManagerDashboardPage /></SuperAdminRoute>} />
                 <Route path="/admin/dashboard" element={<SuperAdminRoute><ManagerDashboardPage /></SuperAdminRoute>} />
                 <Route path="/super-admin"     element={<SuperAdminRoute><ManagerDashboardPage /></SuperAdminRoute>} />
-                <Route path="/manager"         element={<SuperAdminRoute><ManagerDashboardPage /></SuperAdminRoute>} />
                 <Route path="/admin/profile"   element={<SuperAdminRoute><SuperAdminProfilePage /></SuperAdminRoute>} />
-                <Route path="/admin/plan-settings"     element={<SuperAdminRoute><PlanSettingsPage /></SuperAdminRoute>} />
-                <Route path="/admin/asset-settings"    element={<SuperAdminRoute><AssetSettingsPage /></SuperAdminRoute>} />
-                <Route path="/admin/bank-details"      element={<SuperAdminRoute><BankDetailsPage /></SuperAdminRoute>} />
-                <Route path="/admin/exchange-rate"     element={<SuperAdminRoute><ExchangeRateSettingsPage /></SuperAdminRoute>} />
-                <Route path="/admin/regulation"        element={<SuperAdminRoute><RegulationSettingsPage /></SuperAdminRoute>} />
-                <Route path="/admin/recovery"          element={<SuperAdminRoute><RecoveryPanelPage /></SuperAdminRoute>} />
+                <Route path="/admin/plan-settings"        element={<SuperAdminRoute><PlanSettingsPage /></SuperAdminRoute>} />
+                <Route path="/admin/asset-settings"       element={<SuperAdminRoute><AssetSettingsPage /></SuperAdminRoute>} />
+                <Route path="/admin/bank-details"         element={<SuperAdminRoute><BankDetailsPage /></SuperAdminRoute>} />
+                <Route path="/admin/exchange-rate"        element={<SuperAdminRoute><ExchangeRateSettingsPage /></SuperAdminRoute>} />
+                <Route path="/admin/regulation"           element={<SuperAdminRoute><RegulationSettingsPage /></SuperAdminRoute>} />
+                <Route path="/admin/recovery"             element={<SuperAdminRoute><RecoveryPanelPage /></SuperAdminRoute>} />
 
                 {/* Fallback */}
                 <Route path="*" element={<Navigate to="/" replace />} />

@@ -56,8 +56,15 @@ const AdminPage = () => {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      let q = supabase.from('profiles').select('*');
+      // FIX: solo traer clientes (role = 'client'), no usuarios del sistema
+      let q = supabase.from('profiles').select('*').eq('role', 'client');
       if (searchQuery) q = q.ilike('email', `%${searchQuery}%`);
+
+      // FIX: retención solo ve clientes de su oficina — manager ve todos
+      if (!authUser?.isManager && authUser?.office_id) {
+        q = q.eq('office_id', authUser.office_id);
+      }
+
       const { data, error } = await q.order('created_at', { ascending: false });
       if (error) throw error;
       setUsers(data || []);
@@ -67,7 +74,7 @@ const AdminPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, toast]);
+  }, [searchQuery, toast, authUser]);
 
   const fetchPlans = useCallback(async () => {
     try {
@@ -117,7 +124,7 @@ const AdminPage = () => {
           p_plan_capital: plan.capital,
         });
         if (error) throw error;
-        
+
         try {
           await supabase.functions.invoke('send-welcome-email', {
             body: {
@@ -155,7 +162,7 @@ const AdminPage = () => {
       try {
         const { error } = await supabase.rpc('admin_reset_user_profile', { p_user_id: resettingUser.id });
         if (error) throw error;
-        
+
         toast({ title: 'Perfil restaurado', description: resettingUser.email, className: 'bg-yellow-500 text-black' });
         setResettingUser(null);
         await fetchUsers();
@@ -176,7 +183,7 @@ const AdminPage = () => {
         redirectTo: `${window.location.origin}/update-password`,
       });
       if (error) throw error;
-      
+
       toast({ title: 'Email enviado', description: passwordResettingUser.email });
       setPasswordResettingUser(null);
     } catch (err) {
@@ -194,12 +201,12 @@ const AdminPage = () => {
       try {
         const rpc = type === 'bonus' ? 'manager_add_bonus' : 'manager_add_balance';
         const { error } = await supabase.rpc(rpc, {
-          p_user_id:      adjustingBalanceUser.id,
-          p_amount:       amount,
+          p_user_id:       adjustingBalanceUser.id,
+          p_amount:        amount,
           p_justification: justification,
         });
         if (error) throw error;
-        
+
         toast({ title: 'Balance ajustado', description: adjustingBalanceUser.email, className: 'bg-purple-600 text-white' });
         setAdjustingBalanceUser(null);
         await fetchUsers();
@@ -221,7 +228,7 @@ const AdminPage = () => {
           p_locked:  newLock,
         });
         if (error) throw error;
-        
+
         toast({
           title: newLock ? '🔒 Trading bloqueado' : '🔓 Trading desbloqueado',
           description: userToToggle.email,
@@ -244,7 +251,7 @@ const AdminPage = () => {
         p_reason:  reason || null,
       });
       if (error) throw error;
-      
+
       toast({
         title: banned ? '🚫 Acceso bloqueado' : '✅ Acceso restaurado',
         description: `${user.email}${reason ? ` · ${reason}` : ''}`,
@@ -265,7 +272,7 @@ const AdminPage = () => {
     try {
       const { error } = await supabase.rpc('admin_delete_user', { p_user_id: user.id });
       if (error) throw error;
-      
+
       toast({
         title: '🗑️ Usuario eliminado',
         description: `${user.email} eliminado permanentemente.`,
@@ -291,7 +298,8 @@ const AdminPage = () => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
               <div>
                 <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <Users className="w-6 h-6 text-blue-400" /> Gestión de Usuarios
+                  <Users className="w-6 h-6 text-blue-400" />
+                  {authUser?.isManager ? 'Gestión de Usuarios' : `Retención — ${authUser?.office_name || 'TaurusFX'}`}
                 </h1>
                 <p className="text-gray-400 text-sm mt-0.5">{users.length} usuarios registrados</p>
               </div>
