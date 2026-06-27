@@ -3,10 +3,7 @@
 // Aplica estos cambios manualmente en tu App.jsx existente.
 // ─────────────────────────────────────────────────────────────
 
-// 1. AGREGAR IMPORTS (junto a los otros imports de páginas):
-import VentasPage from '@/pages/ventas/VentasPage';
-import ManagerDashboardPage from '@/pages/admin/ManagerDashboardPage';
-import VentasRoute from '@/components/VentasRoute';
+// 1. AGREGAR IMPORTS (junto a los otros imports de páginas)
 
 // 2. CAMBIAR la ruta de super-admin por manager:
 //    ANTES:
