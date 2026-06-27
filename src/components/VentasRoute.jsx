@@ -1,11 +1,11 @@
-// ── SuperAdminRoute.jsx (ahora protege el panel Manager) ─────
-// Solo usuarios con role = 'manager'
+// ── VentasRoute.jsx ───────────────────────────────────────────
+// Solo usuarios con role = 'ventas' o 'manager'
 import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
-const SuperAdminRoute = ({ children }) => {
+const VentasRoute = ({ children }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
@@ -21,12 +21,11 @@ const SuperAdminRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Solo manager tiene acceso
-  if (!user.isManager) {
+  if (!user.isVentas && !user.isManager) {
     return <Navigate to="/dashboard" replace />;
   }
 
   return children;
 };
 
-export default SuperAdminRoute;
+export default VentasRoute;

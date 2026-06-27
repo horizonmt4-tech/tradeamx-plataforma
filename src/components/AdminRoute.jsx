@@ -1,3 +1,5 @@
+// ── AdminRoute.jsx (Retención) ────────────────────────────────
+// Solo usuarios con role = 'retencion' o 'manager'
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,13 +10,14 @@ const AdminRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center h-screen bg-slate-900">
         <Loader2 className="w-16 h-16 text-green-500 animate-spin" />
       </div>
     );
   }
 
-  if (!user || !user.isAdmin) {
+  // Retención y Manager tienen acceso al panel de admin/retención
+  if (!user || (!user.isAdmin && !user.isManager)) {
     return <Navigate to="/dashboard" replace />;
   }
 

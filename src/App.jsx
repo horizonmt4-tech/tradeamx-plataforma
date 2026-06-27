@@ -1,3 +1,30 @@
+// ── CAMBIOS EN App.jsx ────────────────────────────────────────
+// Solo muestra las líneas que cambian vs el App.jsx actual.
+// Aplica estos cambios manualmente en tu App.jsx existente.
+// ─────────────────────────────────────────────────────────────
+
+// 1. AGREGAR IMPORTS (junto a los otros imports de páginas):
+import VentasPage from '@/pages/ventas/VentasPage';
+import ManagerDashboardPage from '@/pages/admin/ManagerDashboardPage';
+import VentasRoute from '@/components/VentasRoute';
+
+// 2. CAMBIAR la ruta de super-admin por manager:
+//    ANTES:
+//    <Route path="/admin/dashboard" element={<SuperAdminRoute><SuperAdminDashboardPage /></SuperAdminRoute>} />
+//    <Route path="/super-admin"     element={<SuperAdminRoute><SuperAdminDashboardPage /></SuperAdminRoute>} />
+//
+//    DESPUÉS:
+//    <Route path="/admin/dashboard" element={<SuperAdminRoute><ManagerDashboardPage /></SuperAdminRoute>} />
+//    <Route path="/super-admin"     element={<SuperAdminRoute><ManagerDashboardPage /></SuperAdminRoute>} />
+//    <Route path="/manager"         element={<SuperAdminRoute><ManagerDashboardPage /></SuperAdminRoute>} />
+
+// 3. AGREGAR ruta de ventas (en la sección de rutas protegidas):
+//    <Route path="/ventas" element={<VentasRoute><VentasPage /></VentasRoute>} />
+
+// ─────────────────────────────────────────────────────────────
+// App.jsx COMPLETO con todos los cambios aplicados:
+// ─────────────────────────────────────────────────────────────
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
@@ -40,9 +67,11 @@ import DepositCancelPage from '@/pages/DepositCancelPage';
 import CalendarPage from '@/pages/CalendarPage';
 import AnalysisPage from '@/pages/AnalysisPage';
 import NewsPage from '@/pages/NewsPage';
-import MineralesLanding from '@/pages/MineralesLanding'; // ← NUEVO
-import RegulationPage from '@/pages/RegulationPage';
+import SpacexLanding from '@/pages/SpacexLanding';
 
+// ── NUEVAS PÁGINAS ────────────────────────────────────────────
+import VentasPage from '@/pages/ventas/VentasPage';
+import ManagerDashboardPage from '@/pages/admin/ManagerDashboardPage';
 
 // Admin Settings Pages
 import PlanSettingsPage from '@/pages/admin/PlanSettingsPage';
@@ -54,13 +83,12 @@ import AdminWithdrawalsPage from '@/pages/admin/AdminWithdrawalsPage';
 import RecoveryPanelPage from '@/pages/admin/RecoveryPanelPage';
 import PaymentRecoveryPage from '@/pages/admin/PaymentRecoveryPage';
 import StripeWebhookStatusPage from '@/pages/admin/StripeWebhookStatusPage';
-import AdminLeadsSpacex from './pages/AdminLeadsSpacex';
-
 
 // Components & Layout
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminRoute from '@/components/AdminRoute';
 import SuperAdminRoute from '@/components/SuperAdminRoute';
+import VentasRoute from '@/components/VentasRoute'; // ← NUEVO
 import GlobalHeader from '@/components/GlobalHeader';
 import { Toaster } from '@/components/ui/toaster';
 import UpdateNotification from '@/components/UpdateNotification';
@@ -75,17 +103,11 @@ import { SuperAdminAuthProvider } from '@/contexts/SuperAdminAuthContext';
 
 // Hooks
 import { useAutoUpdate } from '@/hooks/useAutoUpdate';
+import { Analytics } from '@vercel/analytics/react';
 
 const HeaderWrapper = () => {
   const { user, profile, loading, signOut } = useSupabaseAuth();
-  return (
-    <GlobalHeader
-      user={user}
-      profile={profile}
-      loading={loading}
-      signOut={signOut}
-    />
-  );
+  return <GlobalHeader user={user} profile={profile} loading={loading} signOut={signOut} />;
 };
 
 function AppContent() {
@@ -94,17 +116,17 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-slate-900 text-slate-50 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
       <Helmet>
-        <title>Tradea - The Future of Trading</title>
-        <meta name="description" content="Tradea is a cutting-edge proprietary trading firm offering funded accounts for skilled traders." />
+        <title>TradeAMX - The Future of Trading</title>
+        <meta name="description" content="TradeAMX is a cutting-edge proprietary trading firm offering funded accounts for skilled traders." />
       </Helmet>
 
       <UpdateNotification isUpdateAvailable={isUpdateAvailable} />
 
       <Routes>
-        {/* ── Landing SpaceX: sin header ni layout global ── */}
-        <Route path="/MineralesLanding" element={<MineralesLanding />} />
+        {/* Landing SpaceX: sin header */}
+        <Route path="/SpacexLanding" element={<SpacexLanding />} />
 
-        {/* ── Todo lo demás: con header ── */}
+        {/* Todo lo demás: con header */}
         <Route path="*" element={
           <>
             <HeaderWrapper />
@@ -122,7 +144,6 @@ function AppContent() {
                 <Route path="/check-email" element={<CheckEmailPage />} />
                 <Route path="/email-confirmation" element={<EmailConfirmationPage />} />
                 <Route path="/terms" element={<TermsPage />} />
-                <Route path="/regulacion" element={<RegulationPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/legal" element={<LegalPage />} />
                 <Route path="/cookies" element={<CookiesPage />} />
@@ -147,26 +168,28 @@ function AppContent() {
                 <Route path="/change-password" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
                 <Route path="/support" element={<ProtectedRoute><SupportPage /></ProtectedRoute>} />
 
-                {/* Admin Routes */}
+                {/* ── VENTAS (nuevo) ── */}
+                <Route path="/ventas" element={<VentasRoute><VentasPage /></VentasRoute>} />
+
+                {/* Retención (admin actual — renombrado internamente) */}
                 <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
                 <Route path="/admin/user/:userId/trades" element={<AdminRoute><AdminUserTradesPage /></AdminRoute>} />
                 <Route path="/admin/user/:userId/trades/edit" element={<AdminRoute><AdminEditUserTradesPage /></AdminRoute>} />
                 <Route path="/admin/withdrawals" element={<AdminRoute><AdminWithdrawalsPage /></AdminRoute>} />
                 <Route path="/admin/payment-recovery" element={<ProtectedRoute><AdminRoute><PaymentRecoveryPage /></AdminRoute></ProtectedRoute>} />
                 <Route path="/admin/stripe-webhook-status" element={<ProtectedRoute><AdminRoute><StripeWebhookStatusPage /></AdminRoute></ProtectedRoute>} />
-                  <Route path="/admin-leads-spacex" element={<AdminLeadsSpacex />} />
 
-
-                {/* Super Admin Routes */}
-                <Route path="/admin/dashboard" element={<SuperAdminRoute><SuperAdminDashboardPage /></SuperAdminRoute>} />
-                <Route path="/super-admin" element={<SuperAdminRoute><SuperAdminDashboardPage /></SuperAdminRoute>} />
-                <Route path="/admin/profile" element={<SuperAdminRoute><SuperAdminProfilePage /></SuperAdminRoute>} />
-                <Route path="/admin/plan-settings" element={<SuperAdminRoute><PlanSettingsPage /></SuperAdminRoute>} />
-                <Route path="/admin/asset-settings" element={<SuperAdminRoute><AssetSettingsPage /></SuperAdminRoute>} />
-                <Route path="/admin/bank-details" element={<SuperAdminRoute><BankDetailsPage /></SuperAdminRoute>} />
-                <Route path="/admin/exchange-rate" element={<SuperAdminRoute><ExchangeRateSettingsPage /></SuperAdminRoute>} />
-                <Route path="/admin/regulation" element={<SuperAdminRoute><RegulationSettingsPage /></SuperAdminRoute>} />
-                <Route path="/admin/recovery" element={<SuperAdminRoute><RecoveryPanelPage /></SuperAdminRoute>} />
+                {/* Manager (ex super-admin) */}
+                <Route path="/admin/dashboard" element={<SuperAdminRoute><ManagerDashboardPage /></SuperAdminRoute>} />
+                <Route path="/super-admin"     element={<SuperAdminRoute><ManagerDashboardPage /></SuperAdminRoute>} />
+                <Route path="/manager"         element={<SuperAdminRoute><ManagerDashboardPage /></SuperAdminRoute>} />
+                <Route path="/admin/profile"   element={<SuperAdminRoute><SuperAdminProfilePage /></SuperAdminRoute>} />
+                <Route path="/admin/plan-settings"     element={<SuperAdminRoute><PlanSettingsPage /></SuperAdminRoute>} />
+                <Route path="/admin/asset-settings"    element={<SuperAdminRoute><AssetSettingsPage /></SuperAdminRoute>} />
+                <Route path="/admin/bank-details"      element={<SuperAdminRoute><BankDetailsPage /></SuperAdminRoute>} />
+                <Route path="/admin/exchange-rate"     element={<SuperAdminRoute><ExchangeRateSettingsPage /></SuperAdminRoute>} />
+                <Route path="/admin/regulation"        element={<SuperAdminRoute><RegulationSettingsPage /></SuperAdminRoute>} />
+                <Route path="/admin/recovery"          element={<SuperAdminRoute><RecoveryPanelPage /></SuperAdminRoute>} />
 
                 {/* Fallback */}
                 <Route path="*" element={<Navigate to="/" replace />} />
@@ -177,6 +200,7 @@ function AppContent() {
       </Routes>
 
       <Toaster />
+      <Analytics />
     </div>
   );
 }
