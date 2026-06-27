@@ -64,7 +64,7 @@ import DepositCancelPage from '@/pages/DepositCancelPage';
 import CalendarPage from '@/pages/CalendarPage';
 import AnalysisPage from '@/pages/AnalysisPage';
 import NewsPage from '@/pages/NewsPage';
-import SpacexLanding from '@/pages/SpacexLanding';
+import SpacexLanding from '@/pages/MineralesLanding';
 
 // ── NUEVAS PÁGINAS ────────────────────────────────────────────
 import VentasPage from '@/pages/ventas/VentasPage';
@@ -121,7 +121,7 @@ function AppContent() {
 
       <Routes>
         {/* Landing SpaceX: sin header */}
-        <Route path="/SpacexLanding" element={<SpacexLanding />} />
+        <Route path="/MineralesLanding" element={<MineralesLanding />} />
 
         {/* Todo lo demás: con header */}
         <Route path="*" element={
