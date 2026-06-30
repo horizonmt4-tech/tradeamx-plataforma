@@ -1,13 +1,16 @@
 // src/pages/ventas/VentasPage.jsx
-// Panel exclusivo para usuarios con role = 'ventas'
-// Solo ve nuevos registros de su oficina (datos de contacto)
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Users, Phone, Mail, RefreshCw, Calendar, Search } from 'lucide-react';
+import {
+  Loader2, Phone, Mail, RefreshCw, Calendar,
+  Search, DollarSign, X, Check,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { useToast } from '@/components/ui/use-toast';
 
 const fmtDate = (d) => new Date(d).toLocaleString('es-MX', {
   timeZone: 'America/Mexico_City',
@@ -15,16 +18,160 @@ const fmtDate = (d) => new Date(d).toLocaleString('es-MX', {
   timeStyle: 'short',
 });
 
+// ── Dialog de apertura de saldo (solo para ventas) ────────────
+const AperturaSaldoDialog = ({ isOpen, onClose, user, onSuccess }) => {
+  const { toast } = useToast();
+  const [amount, setAmount]               = useState('');
+  const [justification, setJustification] = useState('Apertura de cuenta');
+  const [loading, setLoading]             = useState(false);
+
+  const handleSubmit = async () => {
+    const num = parseFloat(amount);
+    if (!num || num <= 0) {
+      toast({ title: 'Error', description: 'El monto debe ser mayor a cero.', variant: 'destructive' });
+      return;
+    }
+    if (!justification.trim()) {
+      toast({ title: 'Error', description: 'La justificación es obligatoria.', variant: 'destructive' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.rpc('manager_add_balance', {
+        p_user_id:       user.id,
+        p_amount:        num,
+        p_justification: justification,
+      });
+      if (error) throw error;
+
+      toast({
+        title: '✅ Saldo asignado',
+        description: `$${num.toFixed(2)} USD agregado a ${user.full_name || user.email}`,
+        className: 'bg-green-600 text-white',
+      });
+      onSuccess();
+      onClose();
+    } catch (err) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+      setAmount('');
+      setJustification('Apertura de cuenta');
+    }
+  };
+
+  const handleClose = () => {
+    setAmount('');
+    setJustification('Apertura de cuenta');
+    onClose();
+  };
+
+  if (!user) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
+      <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-green-400" />
+            Asignar Saldo de Apertura
+          </DialogTitle>
+          <DialogDescription className="text-slate-400">
+            Asignando saldo a{' '}
+            <span className="font-bold text-white">{user.full_name || user.email}</span>
+            <br />
+            Balance actual:{' '}
+            <span className="text-green-400 font-mono">${Number(user.balance || 0).toFixed(2)} USD</span>
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          {/* Montos rápidos */}
+          <div>
+            <Label className="text-xs text-slate-400 mb-2 block">Monto rápido</Label>
+            <div className="grid grid-cols-4 gap-2">
+              {[1000, 2500, 5000, 10000].map(v => (
+                <button
+                  key={v}
+                  onClick={() => setAmount(String(v))}
+                  className={`py-2 rounded-lg text-xs font-medium border transition-all ${
+                    amount === String(v)
+                      ? 'bg-green-500/20 border-green-500 text-green-300'
+                      : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
+                  }`}
+                >
+                  ${v.toLocaleString()}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="amount" className="text-xs text-slate-400 mb-1.5 block">
+              Monto (USD)
+            </Label>
+            <div className="relative">
+              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                id="amount"
+                type="number"
+                min="1"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                placeholder="Ej: 5000"
+                className="pl-9 bg-slate-800 border-slate-600 text-white h-11"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">USD</span>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="justification" className="text-xs text-slate-400 mb-1.5 block">
+              Justificación
+            </Label>
+            <Input
+              id="justification"
+              value={justification}
+              onChange={e => setJustification(e.target.value)}
+              placeholder="Ej: Apertura de cuenta / Depósito confirmado"
+              className="bg-slate-800 border-slate-600 text-white"
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={handleClose}
+            className="border-slate-700 text-slate-300 hover:bg-slate-800">
+            <X className="w-4 h-4 mr-1" /> Cancelar
+          </Button>
+          <Button onClick={handleSubmit} disabled={loading || !amount}
+            className="bg-green-600 hover:bg-green-500 text-white">
+            {loading
+              ? <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              : <Check className="w-4 h-4 mr-1" />
+            }
+            Confirmar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// ── Componente principal ──────────────────────────────────────
 const VentasPage = () => {
-  const { user } = useAuth();
-  const [registros, setRegistros] = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [search, setSearch]       = useState('');
-  const [filtro, setFiltro]       = useState('7'); // días
+  const { user }    = useAuth();
+  const [registros, setRegistros]       = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [search, setSearch]             = useState('');
+  const [filtro, setFiltro]             = useState('7');
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showDialog, setShowDialog]     = useState(false);
 
   const fetchRegistros = useCallback(async () => {
     setLoading(true);
-    const dias = parseInt(filtro);
+    const dias  = parseInt(filtro);
     const desde = new Date();
     desde.setDate(desde.getDate() - dias);
 
@@ -35,7 +182,6 @@ const VentasPage = () => {
       .gte('created_at', desde.toISOString())
       .order('created_at', { ascending: false });
 
-    // Si es ventas (no manager) solo ve su oficina
     if (!user.isManager && user.office_id) {
       query = query.eq('office_id', user.office_id);
     }
@@ -60,6 +206,11 @@ const VentasPage = () => {
     window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
   };
 
+  const handleAbrirSaldo = (registro) => {
+    setSelectedUser(registro);
+    setShowDialog(true);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 pb-16">
       <div className="max-w-6xl mx-auto px-4 pt-8">
@@ -82,10 +233,10 @@ const VentasPage = () => {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {[
-            { label: `Registros (${filtro}d)`, value: registros.length, color: 'text-sky-400' },
-            { label: 'Con teléfono',    value: registros.filter(r => r.phone_number).length, color: 'text-green-400' },
-            { label: 'Con plan activo', value: registros.filter(r => r.has_purchased_plan).length, color: 'text-yellow-400' },
-            { label: 'Sin plan',        value: registros.filter(r => !r.has_purchased_plan).length, color: 'text-red-400' },
+            { label: `Registros (${filtro}d)`, value: registros.length,                                  color: 'text-sky-400' },
+            { label: 'Con teléfono',           value: registros.filter(r => r.phone_number).length,      color: 'text-green-400' },
+            { label: 'Con plan activo',         value: registros.filter(r => r.has_purchased_plan).length, color: 'text-yellow-400' },
+            { label: 'Sin plan',                value: registros.filter(r => !r.has_purchased_plan).length, color: 'text-red-400' },
           ].map(s => (
             <div key={s.label} className="bg-slate-900 border border-slate-800 rounded-xl p-4">
               <p className="text-xs text-slate-500 mb-1">{s.label}</p>
@@ -104,8 +255,8 @@ const VentasPage = () => {
           </div>
           <div className="flex gap-2">
             {[
-              { label: 'Hoy', value: '1' },
-              { label: '7 días', value: '7' },
+              { label: 'Hoy',     value: '1' },
+              { label: '7 días',  value: '7' },
               { label: '15 días', value: '15' },
               { label: '30 días', value: '30' },
             ].map(f => (
@@ -132,13 +283,16 @@ const VentasPage = () => {
           <div className="space-y-2">
             {filtered.map(r => (
               <div key={r.id}
-                className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center gap-4">
+                className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center gap-3">
+
+                {/* Avatar */}
                 <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0">
                   <span className="text-white font-bold text-sm">
                     {r.full_name?.charAt(0)?.toUpperCase() || '?'}
                   </span>
                 </div>
 
+                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-semibold text-sm truncate">
                     {r.full_name || 'Sin nombre'}
@@ -153,8 +307,15 @@ const VentasPage = () => {
                       </span>
                     )}
                   </div>
+                  {/* Balance actual */}
+                  {Number(r.balance) > 0 && (
+                    <p className="text-green-400 text-xs font-mono mt-0.5">
+                      Balance: ${Number(r.balance).toFixed(2)} USD
+                    </p>
+                  )}
                 </div>
 
+                {/* Status + fecha */}
                 <div className="text-right shrink-0">
                   <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${
                     r.has_purchased_plan
@@ -169,6 +330,16 @@ const VentasPage = () => {
                   </p>
                 </div>
 
+                {/* Botón asignar saldo */}
+                <button
+                  onClick={() => handleAbrirSaldo(r)}
+                  className="shrink-0 w-9 h-9 rounded-lg bg-blue-600 hover:bg-blue-500 flex items-center justify-center transition-colors"
+                  title="Asignar saldo de apertura"
+                >
+                  <DollarSign className="w-4 h-4 text-white" />
+                </button>
+
+                {/* Botón WhatsApp */}
                 {r.phone_number && (
                   <button
                     onClick={() => abrirWhatsApp(r.phone_number, r.full_name)}
@@ -183,6 +354,14 @@ const VentasPage = () => {
           </div>
         )}
       </div>
+
+      {/* Dialog apertura de saldo */}
+      <AperturaSaldoDialog
+        isOpen={showDialog}
+        onClose={() => { setShowDialog(false); setSelectedUser(null); }}
+        user={selectedUser}
+        onSuccess={fetchRegistros}
+      />
     </div>
   );
 };
