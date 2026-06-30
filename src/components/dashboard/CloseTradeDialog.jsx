@@ -25,7 +25,24 @@ const CloseTradeDialog = ({ trade, isOpen, onClose, onConfirm, isMarketOpen }) =
     setPLBreakdown(null);
     setCalcError(false);
 
-    if (!trade || !asset || !prices[trade.symbol]) return;
+    if (!trade || !asset) return;
+
+    // ✅ FIX: si el trade tiene un override fijo del admin, no necesitamos
+    // esperar el precio de mercado — el P/L ya está definido.
+    if (trade.pl_adjustment_is_override) {
+      const priceData = prices[trade.symbol];
+      // Usamos el precio actual disponible solo para mostrarlo en el resumen,
+      // pero el P/L final no depende de él.
+      const displayClosePrice = priceData
+        ? (trade.type === 'BUY' ? priceData.bid : priceData.ask)
+        : Number(trade.open_price);
+
+      const breakdown = calculateFinalPL(trade, asset, displayClosePrice);
+      setPLBreakdown({ ...breakdown, closePrice: displayClosePrice });
+      return;
+    }
+
+    if (!prices[trade.symbol]) return;
 
     const priceData = prices[trade.symbol];
     const closePrice = trade.type === 'BUY' ? priceData.bid : priceData.ask;
@@ -142,26 +159,16 @@ const CloseTradeDialog = ({ trade, isOpen, onClose, onConfirm, isMarketOpen }) =
             </Card>
           )}
 
-          {/* P/L Breakdown — only when calculation succeeded */}
+          {/* ✅ FIX: P/L simplificado a un solo número — sin desglose confuso */}
           {plBreakdown && (
             <div className="bg-slate-800 rounded-lg p-4 space-y-3 border border-slate-700">
               <div className="flex items-center gap-2 text-sm font-semibold text-blue-400 mb-2">
                 <Info className="w-4 h-4" />
-                Detalle de Ganancia/Pérdida
+                Resultado de la Operación
               </div>
 
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400 text-sm">P/L Calculado:</span>
-                  <span className={cn(
-                    'font-mono font-bold',
-                    plBreakdown.calculatedPL >= 0 ? 'text-green-400' : 'text-red-400'
-                  )}>
-                    ${plBreakdown.calculatedPL.toFixed(2)}
-                  </span>
-                </div>
-
-              <div className="flex justify-between items-center border-t border-slate-600 pt-3 mt-2">
-                <span className="text-white font-bold text-lg">P/L FINAL:</span>
+              <div className="flex justify-between items-center">
+                <span className="text-white font-bold text-lg">P/L Final:</span>
                 <span className={cn(
                   'font-mono font-bold text-xl',
                   plBreakdown.finalPL >= 0 ? 'text-green-400' : 'text-red-400'

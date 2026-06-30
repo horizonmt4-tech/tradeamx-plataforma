@@ -2,15 +2,33 @@ import { supabase } from '@/lib/customSupabaseClient';
 import { calculateProfitLoss } from '@/lib/tradeUtils';
 
 /**
- * Calculate the final P/L for a trade including admin adjustments
+ * Calculate the final P/L for a trade, respecting admin overrides.
+ *
+ * Two modes:
+ * - Override mode (trade.pl_adjustment_is_override === true): the admin fijó
+ *   un valor EXACTO para este trade. Ese valor es el P/L final, sin importar
+ *   el precio de mercado.
+ * - Normal mode: el P/L final es simplemente el cálculo de mercado en vivo.
+ *
  * @param {Object} trade - The trade object
  * @param {Object} asset - The asset object with contract_size
  * @param {number} closePrice - The closing price
- * @returns {Object} - { calculatedPL, adminAdjustment, finalPL }
+ * @returns {Object} - { calculatedPL, isOverride, finalPL }
  */
 export const calculateFinalPL = (trade, asset, closePrice) => {
   if (!trade || !asset) {
-    return { calculatedPL: 0, adminAdjustment: 0, finalPL: 0 };
+    return { calculatedPL: 0, isOverride: false, finalPL: 0 };
+  }
+
+  // ✅ FIX: si el admin fijó un P/L exacto, ese es el resultado — no se suma
+  // ni se recalcula con el mercado.
+  if (trade.pl_adjustment_is_override) {
+    const finalPL = Number(trade.pl_adjustment) || 0;
+    return {
+      calculatedPL: finalPL,
+      isOverride: true,
+      finalPL,
+    };
   }
 
   // FIX: pass trade.symbol so calculateProfitLoss can resolve contract_size
@@ -21,10 +39,8 @@ export const calculateFinalPL = (trade, asset, closePrice) => {
     closePrice,
     Number(trade.lot_size),
     asset.contract_size,
-    trade.symbol  // ← ADDED: allows fallback to getContractSizeBySymbol
+    trade.symbol  // ← allows fallback to getContractSizeBySymbol
   );
-
-  const adminAdjustment = Number(trade.pl_adjustment) || 0;
 
   // FIX: calculateProfitLoss can return null if validation or sanity checks fail.
   // null + 0 = 0 in JS, which caused the $0.00 bug.
@@ -37,15 +53,15 @@ export const calculateFinalPL = (trade, asset, closePrice) => {
       lot_size: trade.lot_size,
       contract_size: asset.contract_size,
     });
-    return { calculatedPL: null, adminAdjustment, finalPL: null, error: true };
+    return { calculatedPL: null, isOverride: false, finalPL: null, error: true };
   }
 
-  const finalPL = calculatedPL + adminAdjustment;
-
+  // ✅ FIX: sin override, el P/L final ES el cálculo de mercado.
+  // pl_adjustment ya NO se suma aquí (solo aplica como override completo).
   return {
     calculatedPL,
-    adminAdjustment,
-    finalPL,
+    isOverride: false,
+    finalPL: calculatedPL,
   };
 };
 
@@ -93,17 +109,8 @@ export const validateTradeClose = (trade) => {
 };
 
 /**
- * Format P/L display with admin adjustment indicator
+ * Format P/L display — simplified, no more confusing breakdown.
  */
-export const formatPLDisplay = (calculatedPL, adminAdjustment, finalPL) => {
-  const parts = [];
-
-  if (adminAdjustment !== 0) {
-    parts.push(`Natural: $${calculatedPL.toFixed(2)}`);
-    parts.push(`Ajuste: ${adminAdjustment >= 0 ? '+' : ''}$${adminAdjustment.toFixed(2)}`);
-    parts.push(`Final: $${finalPL.toFixed(2)}`);
-    return parts.join(' | ');
-  }
-
-  return `$${finalPL.toFixed(2)}`;
+export const formatPLDisplay = (finalPL) => {
+  return `$${Number(finalPL).toFixed(2)}`;
 };
