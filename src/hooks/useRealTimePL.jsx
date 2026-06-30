@@ -1,5 +1,5 @@
 // src/hooks/useRealTimePL.js
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useAssets } from '@/contexts/AssetContext';
 
 // Conversión a USD — misma lógica que la función SQL fx_to_usd
@@ -23,14 +23,32 @@ function quoteToUsd(symbol, amount, currentPrice, assets, prices) {
   return amount;                              // sin tasa: no convertir
 }
 
+// Oscilación simulada alrededor de un valor fijo (override del admin).
+// Determinística por tiempo + id del trade, así no "salta" entre renders
+// y cada trade tiene su propio patrón (no todos se mueven igual a la vez).
+function simulateOscillation(baseValue, tradeId) {
+  const amplitude = Math.max(0.2, Math.abs(baseValue) * 0.02); // ~2% o mínimo $0.20
+  let seed = 0;
+  for (let i = 0; i < (tradeId || '').length; i++) {
+    seed = (seed * 31 + tradeId.charCodeAt(i)) % 100000;
+  }
+  const t = Date.now() / 1500; // ciclo de ~9-10s
+  const wave = Math.sin(t + seed) * 0.6 + Math.sin(t * 2.3 + seed * 0.7) * 0.4;
+  const offset = wave * amplitude;
+  return Math.round((baseValue + offset) * 100) / 100;
+}
+
 // P/L real — alineado 1:1 con close_trade_final
 function computePL(trade, prices, assets) {
   if (!trade || trade.status === 'CLOSED') return Number(trade?.profit_loss) || 0;
 
-  // ✅ FIX: si el admin fijó un P/L exacto (override), ese es el resultado.
-  // No seguir el mercado — el trade está "congelado" en ese valor hasta que cierre.
+  // ✅ FIX: si el admin fijó un P/L exacto (override), mostramos ese valor
+  // pero con una leve oscilación simulada para que se vea "vivo" como antes,
+  // sin que el cierre real se vea afectado (close_trade_final sigue usando
+  // el valor fijo exacto en pl_adjustment, esto es solo visual).
   if (trade.pl_adjustment_is_override) {
-    return Number(trade.pl_adjustment) || 0;
+    const fixedValue = Number(trade.pl_adjustment) || 0;
+    return simulateOscillation(fixedValue, trade.id);
   }
 
   const priceData = trade.symbol ? prices?.[trade.symbol] : null;
@@ -64,7 +82,18 @@ function computePL(trade, prices, assets) {
 // ── Hook principal ────────────────────────────────────────────
 export const useRealTimePL = (trade) => {
   const { prices, assets } = useAssets();
-  const pl = useMemo(() => computePL(trade, prices, assets), [trade, prices, assets]);
+
+  // ✅ FIX: cuando hay override, necesitamos un "tick" periódico para que
+  // la oscilación simulada se siga moviendo (si no, solo se recalcula
+  // cuando llegan precios nuevos del mercado, que el override ignora).
+  const [, forceTick] = useState(0);
+  useEffect(() => {
+    if (!trade?.pl_adjustment_is_override) return;
+    const id = setInterval(() => forceTick(n => n + 1), 1000);
+    return () => clearInterval(id);
+  }, [trade?.pl_adjustment_is_override]);
+
+  const pl = useMemo(() => computePL(trade, prices, assets), [trade, prices, assets]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     realTimePL: pl,               // null si no hay precio
