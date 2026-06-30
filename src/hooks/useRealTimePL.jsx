@@ -27,6 +27,12 @@ function quoteToUsd(symbol, amount, currentPrice, assets, prices) {
 function computePL(trade, prices, assets) {
   if (!trade || trade.status === 'CLOSED') return Number(trade?.profit_loss) || 0;
 
+  // ✅ FIX: si el admin fijó un P/L exacto (override), ese es el resultado.
+  // No seguir el mercado — el trade está "congelado" en ese valor hasta que cierre.
+  if (trade.pl_adjustment_is_override) {
+    return Number(trade.pl_adjustment) || 0;
+  }
+
   const priceData = trade.symbol ? prices?.[trade.symbol] : null;
   if (!priceData) return null;   // sin precio → null (el componente muestra spinner, NO 0)
 
@@ -49,7 +55,9 @@ function computePL(trade, prices, assets) {
 
   let pl = diff * lot * contract;
   pl = quoteToUsd(trade.symbol, pl, exit, assets, prices);  // → USD
-  pl += Number(trade.pl_adjustment) || 0;
+  // ✅ FIX: ya NO se suma pl_adjustment aquí. Sin override, el ajuste no aplica
+  // (pl_adjustment solo tiene efecto cuando pl_adjustment_is_override = true,
+  // y en ese caso ya retornamos arriba con el valor fijo).
   return Math.round(pl * 100) / 100;
 }
 
@@ -62,7 +70,7 @@ export const useRealTimePL = (trade) => {
     realTimePL: pl,               // null si no hay precio
     isProfit:   (pl ?? 0) >= 0,   // ✅ color del MISMO número: nunca más verde con negativo
     volatility: 0,
-    isLivePrice: true,
+    isLivePrice: !trade?.pl_adjustment_is_override, // false si está congelado por el admin
   };
 };
 
