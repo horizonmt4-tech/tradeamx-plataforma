@@ -138,7 +138,7 @@ const EFECTIVO_OPTIONS = [
 const CRYPTO_DATA = {
   network:  "Red Tron (TRC-20)",
   currency: "USDT — Tether USD",
-  address:  "TAvVKPFmyKiBkpFfpJKt4jXHRL7aKmmmMbY",
+  address:  "TN5JoVMVUUJFD9GhRGeeLLiaTKUTug7vut",
   warning:  "Solo debes enviar USDT. Si depositas otra cripto puedes perder los fondos.",
 };
 
