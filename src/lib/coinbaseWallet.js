@@ -15,7 +15,11 @@ export const NETWORK = {
   chainIdHex: '0xaa36a7', // Sepolia = 11155111. Polygon mainnet = 0x89 (137)
   chainId: 11155111,
   chainName: 'Sepolia',
-  rpcUrls: ['https://ethereum-sepolia-rpc.publicnode.com'], // RPC público, sin API key
+  rpcUrls: [
+    'https://rpc.ankr.com/eth_sepolia',
+    'https://ethereum-sepolia-rpc.publicnode.com',
+    'https://sepolia.drpc.org',
+  ],
   nativeCurrency: { name: 'Sepolia ETH', symbol: 'ETH', decimals: 18 },
   blockExplorerUrls: ['https://sepolia.etherscan.io'],
 };
