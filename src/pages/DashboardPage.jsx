@@ -13,6 +13,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import PerformanceChart from '@/components/dashboard/PerformanceChart';
+import ConnectWallet from '@/components/client/ConnectWallet';
 import { useTotalPL } from '@/hooks/useRealTimePL';
 import { cn } from '@/lib/utils';
 
@@ -455,6 +456,13 @@ const DashboardPage = () => {
       <div className="mb-5">
         <ObjectivesHorizontal user={userData} />
       </div>
+
+      {/* ✅ Wallet TAMX — conectar Coinbase Wallet y agregar el token */}
+      {!userData.isDemo && (
+        <div className="mb-5 max-w-md">
+          <ConnectWallet />
+        </div>
+      )}
 
       {/* ✅ Fila de cards pequeños: P/L semanal + Actividad reciente + Activos */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-5">

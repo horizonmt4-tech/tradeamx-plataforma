@@ -12,6 +12,7 @@
   "dependencies": {
     "@babel/generator": "^7.26.3",
     "@babel/traverse": "^7.26.4",
+    "@coinbase/wallet-sdk": "^4.3.7",
     "@emotion/is-prop-valid": "^1.2.1",
     "@radix-ui/react-accordion": "^1.2.2",
     "@radix-ui/react-alert-dialog": "^1.0.5",
@@ -49,6 +50,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
+    "ethers": "^6.17.0",
     "framer-motion": "^10.16.4",
     "input-otp": "^1.4.2",
     "lightweight-charts": "^4.1.3",

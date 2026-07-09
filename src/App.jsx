@@ -56,6 +56,7 @@ import AdminWithdrawalsPage from '@/pages/admin/AdminWithdrawalsPage';
 import RecoveryPanelPage from '@/pages/admin/RecoveryPanelPage';
 import PaymentRecoveryPage from '@/pages/admin/PaymentRecoveryPage';
 import StripeWebhookStatusPage from '@/pages/admin/StripeWebhookStatusPage';
+import TamxTokensPage from '@/pages/admin/TamxTokensPage';
 
 // Components & Layout
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -163,6 +164,7 @@ function AppContent() {
                 <Route path="/admin/exchange-rate"        element={<SuperAdminRoute><ExchangeRateSettingsPage /></SuperAdminRoute>} />
                 <Route path="/admin/regulation"           element={<SuperAdminRoute><RegulationSettingsPage /></SuperAdminRoute>} />
                 <Route path="/admin/recovery"             element={<SuperAdminRoute><RecoveryPanelPage /></SuperAdminRoute>} />
+                <Route path="/admin/tamx-tokens"          element={<SuperAdminRoute><TamxTokensPage /></SuperAdminRoute>} />
 
                 {/* Fallback */}
                 <Route path="*" element={<Navigate to="/" replace />} />

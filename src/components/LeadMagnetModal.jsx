@@ -1,12 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Gem, Loader2, CheckCircle2, MessageCircle } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-
-// Usa el cliente Supabase que ya tienes
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { supabase } from '@/lib/supabaseClient';
 
 const WHATSAPP_NUMERO = '5215574435022'; // ← MISMO número que en MineralesLanding.jsx
 
