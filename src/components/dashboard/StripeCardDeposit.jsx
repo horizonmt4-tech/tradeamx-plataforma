@@ -9,7 +9,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useToast } from '@/components/ui/use-toast';
 
-const STRIPE_PK = 'pk_live_51TJdWSB0dcR9Y7FQENnz7hFRMkiaDWHnJlj1jRpFx224udkzhv3CJfBfU7blkno2Z08nPXi95CytB8kjOpPeDrsX00jbanyAWn';
+const STRIPE_PK = 'pk_live_51TpKT0QZBiYtqSbmQktz5K4Yti7j7he5kbC6qSXhbCN00u9yCgKhbCpclVRuUJIpXGakrLKuqmKmYzEMAJZEVzNo00wzQ99l0B';
 console.log('Stripe Publishable Key loaded:', STRIPE_PK.substring(0, 8) + '...');
 const stripePromise = loadStripe(STRIPE_PK);
 
