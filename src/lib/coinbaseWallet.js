@@ -10,21 +10,17 @@ import { BrowserProvider } from 'ethers';
 const APP_NAME = 'TradeAMX';
 const APP_LOGO_URL = 'https://tradeamx.com/logo.png'; // ajustar a tu logo real
 
-// --- Config de red: cambia esto cuando pases de Sepolia a Polygon mainnet ---
+// --- Config de red: Base Mainnet (producción) ---
 export const NETWORK = {
-  chainIdHex: '0xaa36a7', // Sepolia = 11155111. Polygon mainnet = 0x89 (137)
-  chainId: 11155111,
-  chainName: 'Sepolia',
-  rpcUrls: [
-    'https://rpc.ankr.com/eth_sepolia',
-    'https://ethereum-sepolia-rpc.publicnode.com',
-    'https://sepolia.drpc.org',
-  ],
-  nativeCurrency: { name: 'Sepolia ETH', symbol: 'ETH', decimals: 18 },
-  blockExplorerUrls: ['https://sepolia.etherscan.io'],
+  chainIdHex: '0x2105', // Base Mainnet = 8453
+  chainId: 8453,
+  chainName: 'Base',
+  rpcUrls: ['https://mainnet.base.org'],
+  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+  blockExplorerUrls: ['https://basescan.org'],
 };
 
-export const TAMX_TOKEN_ADDRESS = '0xbC2356eD4c21fb3c6d76AF2B30B1D693775D4043';
+export const TAMX_TOKEN_ADDRESS = '0xDCA8Ce12aC35990baA05f007f92BC28507Ffe710';
 
 let sdk;
 let cbProvider;
