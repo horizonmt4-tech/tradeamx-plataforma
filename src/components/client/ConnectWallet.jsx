@@ -84,9 +84,32 @@ export default function ConnectWallet() {
   const handleAddToken = async () => {
     setError(null);
     try {
+      // Si la wallet no está activa en esta sesión del navegador, conecta primero
+      // (silencioso, sin volver a guardar nada si ya coincide con lo guardado).
+      if (!address) {
+        await connectCoinbaseWallet();
+      }
       await addTamxToWallet();
     } catch (err) {
       setError(err.message || 'No se pudo agregar el token.');
+    }
+  };
+
+  const handleDisconnect = async () => {
+    setError(null);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData?.user) {
+        await supabase
+          .from('profiles')
+          .update({ wallet_address: null })
+          .eq('id', userData.user.id);
+      }
+      setSavedWallet(null);
+      setAddress(null);
+      setBalance(null);
+    } catch (err) {
+      setError(err.message || 'No se pudo desconectar la wallet.');
     }
   };
 
@@ -127,9 +150,11 @@ export default function ConnectWallet() {
           </div>
         )}
 
-        <p className="text-xs text-gray-400 mb-3">
-          Conecta tu Coinbase Wallet para ver y usar tus tokens TAMX.
-        </p>
+        {!savedWallet && (
+          <p className="text-xs text-gray-400 mb-3">
+            Conecta tu Coinbase Wallet para ver y usar tus tokens TAMX.
+          </p>
+        )}
 
         {!hasInjectedWallet && (
           <div className="flex items-start gap-2 bg-blue-500/10 border border-blue-500/20 rounded-lg p-2.5 mb-3">
@@ -142,7 +167,7 @@ export default function ConnectWallet() {
           </div>
         )}
 
-        {!address ? (
+        {!savedWallet ? (
           <Button
             onClick={handleConnect}
             disabled={loading}
@@ -151,9 +176,9 @@ export default function ConnectWallet() {
             {loading ? 'Conectando...' : 'Conectar Coinbase Wallet'}
           </Button>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             <p className="text-xs text-gray-300 font-mono break-all bg-slate-800/60 rounded-lg p-2">
-              {address}
+              {savedWallet}
             </p>
             <Button
               onClick={handleAddToken}
@@ -163,6 +188,12 @@ export default function ConnectWallet() {
               <PlusCircle className="h-4 w-4 mr-2" />
               Agregar TAMX a mi wallet
             </Button>
+            <button
+              onClick={handleDisconnect}
+              className="w-full text-[11px] text-gray-500 hover:text-red-400 transition-colors py-1"
+            >
+              Desconectar wallet
+            </button>
           </div>
         )}
 
