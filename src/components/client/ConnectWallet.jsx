@@ -1,26 +1,62 @@
 // ConnectWallet.jsx
-// Vista del CLIENTE: conectar su Coinbase Wallet y agregar TAMX.
+// Vista del CLIENTE: ver su balance de TAMX en tiempo real (leído directo de
+// la blockchain, no depende de que Coinbase Wallet lo haya "indexado") y
+// conectar su wallet para agregar el token visualmente si lo desea.
 
-import { useState, useEffect } from 'react';
-import { connectCoinbaseWallet, addTamxToWallet } from '@/lib/coinbaseWallet';
+import { useState, useEffect, useCallback } from 'react';
+import { connectCoinbaseWallet, addTamxToWallet, getTamxBalance } from '@/lib/coinbaseWallet';
 import { supabase } from '@/lib/supabaseClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Wallet, PlusCircle, Info } from 'lucide-react';
+import { Wallet, PlusCircle, Info, RefreshCw, ExternalLink } from 'lucide-react';
+
+const BASESCAN_ADDRESS_URL = (addr) =>
+  `https://basescan.org/token/0xDCA8Ce12aC35990baA05f007f92BC28507Ffe710?a=${addr}`;
 
 export default function ConnectWallet() {
   const [address, setAddress] = useState(null);
+  const [savedWallet, setSavedWallet] = useState(null); // wallet guardada en el perfil, aunque no esté conectada ahora
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [hasInjectedWallet, setHasInjectedWallet] = useState(true);
+  const [balance, setBalance] = useState(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
 
   useEffect(() => {
-    // Detecta si hay una wallet inyectada en el navegador (extensión de escritorio,
-    // o el navegador integrado dentro de una app de wallet móvil). Si no hay
-    // ninguna, el cliente probablemente está en Chrome/Safari normal del celular,
-    // donde "Agregar TAMX a mi wallet" no puede disparar el popup automático.
     setHasInjectedWallet(typeof window !== 'undefined' && !!window.ethereum);
   }, []);
+
+  const fetchBalance = useCallback(async (walletAddress) => {
+    if (!walletAddress) return;
+    setBalanceLoading(true);
+    try {
+      const bal = await getTamxBalance(walletAddress);
+      setBalance(bal);
+    } catch (err) {
+      console.error('Error leyendo balance TAMX:', err);
+    } finally {
+      setBalanceLoading(false);
+    }
+  }, []);
+
+  // Al cargar, revisa si el cliente ya tiene una wallet guardada en su perfil
+  // (de una conexión anterior) y muestra su balance de inmediato, sin
+  // necesitar que la wallet esté activa en este navegador.
+  useEffect(() => {
+    (async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) return;
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('wallet_address')
+        .eq('id', userData.user.id)
+        .single();
+      if (profile?.wallet_address) {
+        setSavedWallet(profile.wallet_address);
+        fetchBalance(profile.wallet_address);
+      }
+    })();
+  }, [fetchBalance]);
 
   const handleConnect = async () => {
     setError(null);
@@ -28,9 +64,8 @@ export default function ConnectWallet() {
     try {
       const { address: connectedAddress } = await connectCoinbaseWallet();
       setAddress(connectedAddress);
+      setSavedWallet(connectedAddress);
 
-      // Guarda la wallet en el perfil para que el admin la encuentre después
-      // sin tener que pedírsela manualmente al cliente.
       const { data: userData } = await supabase.auth.getUser();
       if (userData?.user) {
         await supabase
@@ -38,6 +73,7 @@ export default function ConnectWallet() {
           .update({ wallet_address: connectedAddress })
           .eq('id', userData.user.id);
       }
+      fetchBalance(connectedAddress);
     } catch (err) {
       setError(err.message || 'No se pudo conectar la wallet.');
     } finally {
@@ -63,6 +99,34 @@ export default function ConnectWallet() {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {savedWallet && (
+          <div className="bg-slate-800/60 rounded-lg p-3 mb-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[11px] text-gray-400">Balance TAMX (en vivo, blockchain)</span>
+              <button
+                onClick={() => fetchBalance(savedWallet)}
+                disabled={balanceLoading}
+                className="text-slate-400 hover:text-white transition-colors"
+                title="Actualizar balance"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${balanceLoading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+            <p className="text-2xl font-bold text-white font-mono tabular-nums">
+              {balance === null ? '—' : balance.toLocaleString('es-MX', { maximumFractionDigits: 4 })}
+              <span className="text-sm text-gray-400 ml-1">TAMX</span>
+            </p>
+            <a
+              href={BASESCAN_ADDRESS_URL(savedWallet)}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 text-[11px] text-cyan-400 hover:text-cyan-300 mt-1"
+            >
+              Verificar en Basescan <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+        )}
+
         <p className="text-xs text-gray-400 mb-3">
           Conecta tu Coinbase Wallet para ver y usar tus tokens TAMX.
         </p>

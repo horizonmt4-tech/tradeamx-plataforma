@@ -5,7 +5,7 @@
 // La v3 usaba `new CoinbaseWalletSDK(...)` — esa clase ya no existe en v4.
 
 import { createCoinbaseWalletSDK } from '@coinbase/wallet-sdk';
-import { BrowserProvider } from 'ethers';
+import { BrowserProvider, JsonRpcProvider, Contract } from 'ethers';
 
 const APP_NAME = 'TradeAMX';
 const APP_LOGO_URL = 'https://tradeamx.com/logo.png'; // ajustar a tu logo real
@@ -86,4 +86,39 @@ export async function addTamxToWallet({
 export function disconnectCoinbaseWallet() {
   sdk = null;
   cbProvider = null;
+}
+
+// --- Lectura de balance directo de la blockchain ---
+// No requiere wallet conectada ni depende del indexador de Coinbase.
+// Esta es la fuente de verdad que debe usar la UI, igual que Basescan.
+
+const BALANCE_ABI = [
+  'function balanceOf(address) view returns (uint256)',
+  'function decimals() view returns (uint8)',
+];
+
+let readOnlyProvider;
+
+function getReadOnlyProvider() {
+  if (!readOnlyProvider) {
+    readOnlyProvider = new JsonRpcProvider(NETWORK.rpcUrls[0]);
+  }
+  return readOnlyProvider;
+}
+
+/**
+ * Lee el balance de TAMX de cualquier dirección, directo del contrato en Base.
+ * Devuelve un número (ej. 1500.5), no un BigInt crudo.
+ */
+export async function getTamxBalance(walletAddress) {
+  if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+    throw new Error('Dirección de wallet inválida');
+  }
+  const provider = getReadOnlyProvider();
+  const contract = new Contract(TAMX_TOKEN_ADDRESS, BALANCE_ABI, provider);
+  const [rawBalance, decimals] = await Promise.all([
+    contract.balanceOf(walletAddress),
+    contract.decimals(),
+  ]);
+  return Number(rawBalance) / 10 ** Number(decimals);
 }
