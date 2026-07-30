@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { connectCoinbaseWallet, addTamxToWallet, getTamxBalance } from '@/lib/coinbaseWallet';
-import { connectInjectedWallet, addTamxToInjectedWallet } from '@/lib/multiWallet';
+import { connectInjectedWallet, addTamxToInjectedWallet, WALLET_INSTALL_URLS } from '@/lib/multiWallet';
 import { supabase } from '@/lib/supabaseClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -110,7 +110,17 @@ export default function ConnectWallet() {
         console.warn('wallet_watchAsset:', watchErr?.message);
       }
     } catch (err) {
-      setError(err.message || 'No se pudo conectar la wallet.');
+      if (err.notInstalled) {
+        // Abre la tienda de extensiones automáticamente — no podemos instalar
+        // la extensión nosotros (los navegadores lo bloquean por seguridad),
+        // pero sí le ahorramos al cliente el paso de buscarla.
+        window.open(WALLET_INSTALL_URLS[err.notInstalled], '_blank', 'noopener');
+        setError(
+          `Abrimos la página para instalar ${WALLET_OPTIONS.find((w) => w.id === err.notInstalled)?.label}. Instálala y vuelve a darle click al botón.`
+        );
+      } else {
+        setError(err.message || 'No se pudo conectar la wallet.');
+      }
     } finally {
       setConnectingId(null);
     }

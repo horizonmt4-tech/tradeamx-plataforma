@@ -5,6 +5,14 @@
 
 import { NETWORK, TAMX_TOKEN_ADDRESS } from '@/lib/coinbaseWallet';
 
+// Links directos a la Chrome Web Store para instalar cada wallet.
+export const WALLET_INSTALL_URLS = {
+  metamask: 'https://chromewebstore.google.com/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn',
+  trustwallet: 'https://chromewebstore.google.com/detail/trust-wallet/egjidjbpglichdcondbcbdnbeeppgdph',
+};
+
+const WALLET_NAMES = { metamask: 'MetaMask', trustwallet: 'Trust Wallet' };
+
 // rdns oficiales que cada wallet anuncia vía EIP-6963
 const WALLET_RDNS = {
   metamask: 'io.metamask',
@@ -61,10 +69,11 @@ async function getInjectedProvider(walletId) {
 export async function connectInjectedWallet(walletId) {
   const provider = await getInjectedProvider(walletId);
   if (!provider) {
-    const names = { metamask: 'MetaMask', trustwallet: 'Trust Wallet' };
-    throw new Error(
-      `No se detectó ${names[walletId]}. Instálala o ábrela, y vuelve a intentar.`
+    const err = new Error(
+      `No se detectó ${WALLET_NAMES[walletId]}. Instálala y vuelve a intentar.`
     );
+    err.notInstalled = walletId; // la UI usa esto para ofrecer el link de instalación
+    throw err;
   }
 
   const accounts = await provider.request({ method: 'eth_requestAccounts' });
