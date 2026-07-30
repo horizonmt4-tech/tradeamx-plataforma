@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { connectCoinbaseWallet, addTamxToWallet, getTamxBalance } from '@/lib/coinbaseWallet';
+import { connectInjectedWallet, addTamxToInjectedWallet } from '@/lib/multiWallet';
 import { supabase } from '@/lib/supabaseClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,10 +14,15 @@ import { Wallet, PlusCircle, Info, RefreshCw, ExternalLink } from 'lucide-react'
 const BASESCAN_ADDRESS_URL = (addr) =>
   `https://basescan.org/token/0xDCA8Ce12aC35990baA05f007f92BC28507Ffe710?a=${addr}`;
 
+const WALLET_OPTIONS = [
+  { id: 'metamask', label: 'MetaMask' },
+  { id: 'coinbase', label: 'Coinbase Wallet' },
+  { id: 'trustwallet', label: 'Trust Wallet' },
+];
+
 export default function ConnectWallet() {
   const [address, setAddress] = useState(null);
   const [savedWallet, setSavedWallet] = useState(null); // wallet guardada en el perfil, aunque no esté conectada ahora
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [hasInjectedWallet, setHasInjectedWallet] = useState(true);
   const [balance, setBalance] = useState(null);
@@ -58,13 +64,28 @@ export default function ConnectWallet() {
     })();
   }, [fetchBalance]);
 
-  const handleConnect = async () => {
+  const [activeProvider, setActiveProvider] = useState(null); // provider crudo, para addTamx en MetaMask/Trust
+  const [connectingId, setConnectingId] = useState(null);
+
+  const handleConnect = async (walletId) => {
     setError(null);
-    setLoading(true);
+    setConnectingId(walletId);
     try {
-      const { address: connectedAddress } = await connectCoinbaseWallet();
+      let connectedAddress;
+      let provider = null;
+
+      if (walletId === 'coinbase') {
+        const result = await connectCoinbaseWallet();
+        connectedAddress = result.address;
+      } else {
+        const result = await connectInjectedWallet(walletId);
+        connectedAddress = result.address;
+        provider = result.provider;
+      }
+
       setAddress(connectedAddress);
       setSavedWallet(connectedAddress);
+      setActiveProvider({ walletId, provider });
 
       const { data: userData } = await supabase.auth.getUser();
       if (userData?.user) {
@@ -74,22 +95,36 @@ export default function ConnectWallet() {
           .eq('id', userData.user.id);
       }
       fetchBalance(connectedAddress);
+
+      // Dispara el import del token automático, sin que el cliente tenga
+      // que darle click a un segundo botón — un solo paso, mínima fricción.
+      try {
+        if (walletId === 'coinbase') {
+          await addTamxToWallet();
+        } else if (provider) {
+          await addTamxToInjectedWallet(provider);
+        }
+      } catch (watchErr) {
+        // Algunas wallets (ej. Coinbase) a veces responden "no hace falta
+        // importar" en vez de error real — no lo tratamos como fallo crítico.
+        console.warn('wallet_watchAsset:', watchErr?.message);
+      }
     } catch (err) {
       setError(err.message || 'No se pudo conectar la wallet.');
     } finally {
-      setLoading(false);
+      setConnectingId(null);
     }
   };
 
   const handleAddToken = async () => {
     setError(null);
     try {
-      // Si la wallet no está activa en esta sesión del navegador, conecta primero
-      // (silencioso, sin volver a guardar nada si ya coincide con lo guardado).
-      if (!address) {
-        await connectCoinbaseWallet();
+      if (activeProvider?.walletId && activeProvider.walletId !== 'coinbase' && activeProvider.provider) {
+        await addTamxToInjectedWallet(activeProvider.provider);
+      } else {
+        if (!address) await connectCoinbaseWallet();
+        await addTamxToWallet();
       }
-      await addTamxToWallet();
     } catch (err) {
       setError(err.message || 'No se pudo agregar el token.');
     }
@@ -108,6 +143,7 @@ export default function ConnectWallet() {
       setSavedWallet(null);
       setAddress(null);
       setBalance(null);
+      setActiveProvider(null);
     } catch (err) {
       setError(err.message || 'No se pudo desconectar la wallet.');
     }
@@ -152,7 +188,7 @@ export default function ConnectWallet() {
 
         {!savedWallet && (
           <p className="text-xs text-gray-400 mb-3">
-            Conecta tu Coinbase Wallet para ver y usar tus tokens TAMX.
+            Elige tu wallet para ver y usar tus tokens TAMX.
           </p>
         )}
 
@@ -168,13 +204,21 @@ export default function ConnectWallet() {
         )}
 
         {!savedWallet ? (
-          <Button
-            onClick={handleConnect}
-            disabled={loading}
-            className="w-full bg-cyan-600 hover:bg-cyan-500 text-white"
-          >
-            {loading ? 'Conectando...' : 'Conectar Coinbase Wallet'}
-          </Button>
+          <div className="space-y-2">
+            {WALLET_OPTIONS.map((w) => (
+              <Button
+                key={w.id}
+                onClick={() => handleConnect(w.id)}
+                disabled={connectingId !== null}
+                className="w-full bg-cyan-600 hover:bg-cyan-500 text-white justify-center"
+              >
+                {connectingId === w.id ? 'Conectando...' : w.label}
+              </Button>
+            ))}
+            <p className="text-[11px] text-gray-500 text-center pt-1">
+              Un solo click conecta tu wallet y agrega TAMX automáticamente.
+            </p>
+          </div>
         ) : (
           <div className="space-y-2">
             <p className="text-xs text-gray-300 font-mono break-all bg-slate-800/60 rounded-lg p-2">
