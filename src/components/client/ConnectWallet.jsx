@@ -91,7 +91,7 @@ export default function ConnectWallet() {
       if (userData?.user) {
         await supabase
           .from('profiles')
-          .update({ wallet_address: connectedAddress })
+          .update({ wallet_address: connectedAddress, wallet_provider: walletId })
           .eq('id', userData.user.id);
       }
       fetchBalance(connectedAddress);
@@ -147,7 +147,7 @@ export default function ConnectWallet() {
       if (userData?.user) {
         await supabase
           .from('profiles')
-          .update({ wallet_address: null })
+          .update({ wallet_address: null, wallet_provider: null })
           .eq('id', userData.user.id);
       }
       setSavedWallet(null);
