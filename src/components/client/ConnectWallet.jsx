@@ -168,42 +168,8 @@ export default function ConnectWallet() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {savedWallet && (
-          <div className="bg-slate-800/60 rounded-lg p-3 mb-3">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] text-gray-400">Balance TAMX (en vivo, blockchain)</span>
-              <button
-                onClick={() => fetchBalance(savedWallet)}
-                disabled={balanceLoading}
-                className="text-slate-400 hover:text-white transition-colors"
-                title="Actualizar balance"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${balanceLoading ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
-            <p className="text-2xl font-bold text-white font-mono tabular-nums">
-              {balance === null ? '—' : balance.toLocaleString('es-MX', { maximumFractionDigits: 4 })}
-              <span className="text-sm text-gray-400 ml-1">TAMX</span>
-            </p>
-            <a
-              href={BASESCAN_ADDRESS_URL(savedWallet)}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1 text-[11px] text-cyan-400 hover:text-cyan-300 mt-1"
-            >
-              Verificar en Basescan <ExternalLink className="h-3 w-3" />
-            </a>
-          </div>
-        )}
-
-        {!savedWallet && (
-          <p className="text-xs text-gray-400 mb-3">
-            Elige tu wallet para ver y usar tus tokens TAMX.
-          </p>
-        )}
-
         {!hasInjectedWallet && (
-          <div className="flex items-start gap-2 bg-blue-500/10 border border-blue-500/20 rounded-lg p-2.5 mb-3">
+          <div className="flex items-start gap-2 bg-blue-500/10 border border-blue-500/20 rounded-lg p-2.5 mb-4">
             <Info className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />
             <p className="text-[11px] text-blue-300/90 leading-relaxed">
               ¿Estás en el navegador normal de tu celular? Para que el token se agregue
@@ -213,43 +179,87 @@ export default function ConnectWallet() {
           </div>
         )}
 
-        {!savedWallet ? (
-          <div className="space-y-2">
-            {WALLET_OPTIONS.map((w) => (
-              <Button
-                key={w.id}
-                onClick={() => handleConnect(w.id)}
-                disabled={connectingId !== null}
-                className="w-full bg-cyan-600 hover:bg-cyan-500 text-white justify-center"
-              >
-                {connectingId === w.id ? 'Conectando...' : w.label}
-              </Button>
-            ))}
-            <p className="text-[11px] text-gray-500 text-center pt-1">
-              Un solo click conecta tu wallet y agrega TAMX automáticamente.
-            </p>
+        <div className="flex flex-col sm:flex-row gap-6">
+          {/* Columna izquierda: balance (si ya hay wallet) o mensaje inicial */}
+          <div className="sm:w-72 shrink-0">
+            {savedWallet ? (
+              <div className="bg-slate-800/60 rounded-lg p-3 h-full">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] text-gray-400">Balance TAMX (en vivo)</span>
+                  <button
+                    onClick={() => fetchBalance(savedWallet)}
+                    disabled={balanceLoading}
+                    className="text-slate-400 hover:text-white transition-colors"
+                    title="Actualizar balance"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${balanceLoading ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
+                <p className="text-2xl font-bold text-white font-mono tabular-nums">
+                  {balance === null ? '—' : balance.toLocaleString('es-MX', { maximumFractionDigits: 4 })}
+                  <span className="text-sm text-gray-400 ml-1">TAMX</span>
+                </p>
+                <a
+                  href={BASESCAN_ADDRESS_URL(savedWallet)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 text-[11px] text-cyan-400 hover:text-cyan-300 mt-1"
+                >
+                  Verificar en Basescan <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400">
+                Elige tu wallet para ver y usar tus tokens TAMX.
+              </p>
+            )}
           </div>
-        ) : (
-          <div className="space-y-2">
-            <p className="text-xs text-gray-300 font-mono break-all bg-slate-800/60 rounded-lg p-2">
-              {savedWallet}
-            </p>
-            <Button
-              onClick={handleAddToken}
-              variant="ghost"
-              className="w-full border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800"
-            >
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Agregar TAMX a mi wallet
-            </Button>
-            <button
-              onClick={handleDisconnect}
-              className="w-full text-[11px] text-gray-500 hover:text-red-400 transition-colors py-1"
-            >
-              Desconectar wallet
-            </button>
+
+          {/* Columna derecha: acciones — botones de conexión, o dirección + agregar + desconectar */}
+          <div className="flex-1 min-w-0">
+            {!savedWallet ? (
+              <div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {WALLET_OPTIONS.map((w) => (
+                    <Button
+                      key={w.id}
+                      onClick={() => handleConnect(w.id)}
+                      disabled={connectingId !== null}
+                      className="w-full bg-cyan-600 hover:bg-cyan-500 text-white justify-center"
+                    >
+                      {connectingId === w.id ? 'Conectando...' : w.label}
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-gray-500 pt-2">
+                  Un solo click conecta tu wallet y agrega TAMX automáticamente.
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 h-full">
+                <p className="text-xs text-gray-300 font-mono break-all bg-slate-800/60 rounded-lg p-2 sm:flex-1">
+                  {savedWallet}
+                </p>
+                <div className="flex items-center gap-3 shrink-0">
+                  <Button
+                    onClick={handleAddToken}
+                    variant="ghost"
+                    className="border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 whitespace-nowrap"
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Agregar TAMX
+                  </Button>
+                  <button
+                    onClick={handleDisconnect}
+                    className="text-[11px] text-gray-500 hover:text-red-400 transition-colors whitespace-nowrap"
+                  >
+                    Desconectar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         {error && <p className="text-red-400 text-xs mt-3">{error}</p>}
       </CardContent>

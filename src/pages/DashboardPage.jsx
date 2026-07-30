@@ -459,7 +459,7 @@ const DashboardPage = () => {
 
       {/* ✅ Wallet TAMX — conectar Coinbase Wallet y agregar el token */}
       {!userData.isDemo && (
-        <div className="mb-5 max-w-md">
+        <div className="mb-5">
           <ConnectWallet />
         </div>
       )}
