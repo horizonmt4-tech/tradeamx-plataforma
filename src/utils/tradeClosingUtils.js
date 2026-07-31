@@ -3,25 +3,12 @@ import { calculateProfitLoss } from '@/lib/tradeUtils';
 
 /**
  * Calculate the final P/L for a trade, respecting admin overrides.
- *
- * Two modes:
- * - Override mode (trade.pl_adjustment_is_override === true): the admin fijó
- *   un valor EXACTO para este trade. Ese valor es el P/L final, sin importar
- *   el precio de mercado.
- * - Normal mode: el P/L final es simplemente el cálculo de mercado en vivo.
- *
- * @param {Object} trade - The trade object
- * @param {Object} asset - The asset object with contract_size
- * @param {number} closePrice - The closing price
- * @returns {Object} - { calculatedPL, isOverride, finalPL }
  */
 export const calculateFinalPL = (trade, asset, closePrice) => {
   if (!trade || !asset) {
     return { calculatedPL: 0, isOverride: false, finalPL: 0 };
   }
 
-  // ✅ FIX: si el admin fijó un P/L exacto, ese es el resultado — no se suma
-  // ni se recalcula con el mercado.
   if (trade.pl_adjustment_is_override) {
     const finalPL = Number(trade.pl_adjustment) || 0;
     return {
@@ -31,19 +18,30 @@ export const calculateFinalPL = (trade, asset, closePrice) => {
     };
   }
 
-  // FIX: pass trade.symbol so calculateProfitLoss can resolve contract_size
-  // if asset.contract_size is null/undefined/0
+  // FIX CRÍTICO — BUG $185 → $1:
+  // Antes se pasaba SOLO asset.contract_size. Pero calculateProfitLoss,
+  // al recibir también trade.symbol, ignoraba ese valor y usaba
+  // getContractSizeBySymbol() en su lugar — una función de patrones que
+  // puede no coincidir con el contract_size real configurado en la BD.
+  //
+  // Ahora priorizamos trade.contract_size (el valor CONGELADO al momento
+  // de abrir la operación) — es la misma fuente que usa useRealTimePL()
+  // para mostrar el P/L en tiempo real, y la misma que usa close_trade_final
+  // en el backend. Si por algún motivo no está congelado en el trade,
+  // caemos a asset.contract_size (el configurado actualmente en la BD).
+  const contractSize = Number(trade.contract_size) > 0
+    ? Number(trade.contract_size)
+    : Number(asset.contract_size);
+
   const calculatedPL = calculateProfitLoss(
     trade.type,
     Number(trade.open_price),
     closePrice,
     Number(trade.lot_size),
-    asset.contract_size,
-    trade.symbol  // ← allows fallback to getContractSizeBySymbol
+    contractSize,
+    trade.symbol
   );
 
-  // FIX: calculateProfitLoss can return null if validation or sanity checks fail.
-  // null + 0 = 0 in JS, which caused the $0.00 bug.
   if (calculatedPL === null) {
     console.error('[calculateFinalPL] calculateProfitLoss returned null. Check inputs:', {
       symbol: trade.symbol,
@@ -51,13 +49,12 @@ export const calculateFinalPL = (trade, asset, closePrice) => {
       open_price: trade.open_price,
       closePrice,
       lot_size: trade.lot_size,
-      contract_size: asset.contract_size,
+      trade_contract_size: trade.contract_size,
+      asset_contract_size: asset.contract_size,
     });
     return { calculatedPL: null, isOverride: false, finalPL: null, error: true };
   }
 
-  // ✅ FIX: sin override, el P/L final ES el cálculo de mercado.
-  // pl_adjustment ya NO se suma aquí (solo aplica como override completo).
   return {
     calculatedPL,
     isOverride: false,
@@ -65,14 +62,6 @@ export const calculateFinalPL = (trade, asset, closePrice) => {
   };
 };
 
-/**
- * Close a trade using the definitive closing function (close_trade_final)
- * Passes exactly 3 parameters to avoid "is not unique" RPC errors.
- * @param {string} tradeId - Trade ID
- * @param {number} closePrice - Closing price
- * @param {Date} closeTime - Closing time (optional, defaults to now)
- * @returns {Promise<Object>} - Result from the database function
- */
 export const closeTrade = async (tradeId, closePrice, closeTime = new Date()) => {
   try {
     const { data, error } = await supabase.rpc('close_trade_final', {
@@ -96,11 +85,6 @@ export const closeTrade = async (tradeId, closePrice, closeTime = new Date()) =>
   }
 };
 
-/**
- * Validate if a trade can be closed
- * @param {Object} trade - The trade object
- * @returns {Object} - { canClose: boolean, reason: string }
- */
 export const validateTradeClose = (trade) => {
   if (!trade) return { canClose: false, reason: 'Trade not found' };
   if (trade.status !== 'OPEN') return { canClose: false, reason: 'Trade is already closed' };
@@ -108,9 +92,6 @@ export const validateTradeClose = (trade) => {
   return { canClose: true, reason: '' };
 };
 
-/**
- * Format P/L display — simplified, no more confusing breakdown.
- */
 export const formatPLDisplay = (finalPL) => {
   return `$${Number(finalPL).toFixed(2)}`;
 };
