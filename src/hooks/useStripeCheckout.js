@@ -3,7 +3,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { supabase } from '@/lib/supabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 
-const stripePromise = loadStripe('pk_live_51Ram6dG8LIOEEY3AYJTCYpXm9P6nmzNnFyunwIEmQRpOyy4KF8Bfcjx0QyMxCHT1ga5e4Ur67ItEjvWkBak3MbgY00rEMY6O4A');
+const stripePromise = loadStripe('pk_live_51U0X2vKGRgjtMECaxuVbLgjjqBTXe5OCju0IZOz3KpriA7LDmwIQ0DNMt4aK4Ab0lkHyO3c5QeCId8kKzKgi2NsL00cOhfHp2t');
 
 export const useStripeCheckout = () => {
   const [loading, setLoading] = useState(false);
