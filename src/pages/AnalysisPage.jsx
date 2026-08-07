@@ -63,7 +63,28 @@ const AnalysisPage = () => {
   const handleOpenTrade = useCallback(async (tradeData) => {
     if (!user || !selectedAsset) return;
     try {
-      const margin = (selectedAsset.contract_size * tradeData.lot_size * tradeData.open_price) / selectedAsset.leverage;
+      // FIX CRÍTICO — bug de margen en pares donde USD es la moneda BASE
+      // (USD/JPY, USD/CAD, USD/CHF, USD/MXN, USD/HKD, USD/ILS, etc.)
+      //
+      // La fórmula (contract_size * lot_size * price) / leverage solo es
+      // correcta cuando USD es la moneda COTIZADA (ej: EUR/USD, GBP/USD),
+      // porque en ese caso el resultado ya está en dólares.
+      //
+      // Cuando USD es la moneda BASE (USD/XXX), 1 unidad de la posición
+      // YA vale exactamente $1 USD — no se debe multiplicar por el precio,
+      // porque el precio representa cuántas unidades de la OTRA moneda
+      // equivalen a 1 USD, no el valor en USD de la posición.
+      //
+      // Ejemplo real: USD/JPY a 150 con 0.01 lotes, contract_size 100,000:
+      //   INCORRECTO: (100000 * 0.01 * 150) / 100 = $1,500 (¡150x inflado!)
+      //   CORRECTO:   (100000 * 0.01 * 1)   / 100 = $10.00
+      const symbol = tradeData.symbol || '';
+      const [base, quote] = symbol.includes('/') ? symbol.toUpperCase().split('/') : [null, null];
+      const isUsdBase = base === 'USD' && quote !== 'USD';
+
+      const priceForMargin = isUsdBase ? 1 : tradeData.open_price;
+
+      const margin = (selectedAsset.contract_size * tradeData.lot_size * priceForMargin) / selectedAsset.leverage;
 
       const { data, error } = await supabase.rpc('open_trade', {
         p_user_id: user.id,

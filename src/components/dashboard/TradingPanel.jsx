@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,6 +10,20 @@ import { cn } from '@/lib/utils';
 import { useMarketHours } from '@/hooks/useMarketHours';
 import { MarketStatusBadge, MarketClosedBanner } from '@/components/trading/MarketStatusBadge';
 
+// ── Categorías de mercado para el filtro ──────────────────────
+// Usa el campo "category" que ya viene de la tabla `assets` en Supabase
+const CATEGORY_LABELS = {
+  all:         'Todos',
+  forex:       'Forex',
+  stocks:      'Acciones',
+  indices:     'Índices',
+  metals:      'Metales',
+  commodities: 'Materias Primas',
+  crypto:      'Cripto',
+};
+
+const CATEGORY_ORDER = ['all', 'forex', 'stocks', 'indices', 'metals', 'commodities', 'crypto'];
+
 const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSymbol, accountBalance }) => {
   const { prices, assetStatus } = useAssets();
   const [lotSize, setLotSize]   = useState(0.01);
@@ -17,16 +31,41 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [stopLoss, setStopLoss]   = useState('');
   const [takeProfit, setTakeProfit] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const { toast } = useToast();
 
   // ── Market hours hook ──
   const { isOpen, isClosed, marketType, reason, nextOpen, schedule } = useMarketHours(selectedSymbol);
+
+  // Categorías realmente disponibles en los activos que llegaron (evita mostrar
+  // un chip de una categoría que no tiene ningún activo cargado)
+  const availableCategories = useMemo(() => {
+    const present = new Set(assets.map(a => a.category).filter(Boolean));
+    return CATEGORY_ORDER.filter(c => c === 'all' || present.has(c));
+  }, [assets]);
+
+  // Lista de activos filtrada por la categoría seleccionada
+  const filteredAssets = useMemo(() => {
+    if (selectedCategory === 'all') return assets;
+    return assets.filter(a => a.category === selectedCategory);
+  }, [assets, selectedCategory]);
 
   useEffect(() => {
     if (assets.length > 0 && !selectedSymbol && typeof setSelectedSymbol === 'function') {
       setSelectedSymbol(assets[0].symbol);
     }
   }, [assets, selectedSymbol, setSelectedSymbol]);
+
+  // Si al cambiar de categoría el símbolo actual ya no aparece en la lista
+  // filtrada, selecciona automáticamente el primero de la nueva categoría
+  useEffect(() => {
+    if (filteredAssets.length === 0) return;
+    const stillValid = filteredAssets.some(a => a.symbol === selectedSymbol);
+    if (!stillValid && typeof setSelectedSymbol === 'function') {
+      setSelectedSymbol(filteredAssets[0].symbol);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategory]);
 
   // Reset SL/TP al cambiar activo
   useEffect(() => {
@@ -169,17 +208,38 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
           </div>
         </div>
 
-        {/* Selector de activo */}
+        {/* ── Filtro de categoría de mercado ── */}
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {availableCategories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={cn(
+                'px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wide transition-colors border',
+                selectedCategory === cat
+                  ? 'bg-[#d4af37] text-black border-[#d4af37]'
+                  : 'bg-zinc-900 text-gray-400 border-zinc-700 hover:border-[#d4af37]/50 hover:text-[#d6ad41]'
+              )}
+            >
+              {CATEGORY_LABELS[cat] || cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Selector de activo (ya filtrado por categoría) */}
         <Select value={selectedSymbol || ''} onValueChange={handleSymbolChange}>
-          <SelectTrigger className="w-full bg-slate-800/80 border-slate-600/60 text-white h-9 text-sm font-mono font-bold hover:border-cyan-500/50 focus:border-cyan-500 transition-colors">
+          <SelectTrigger className="w-full bg-zinc-900/80 border-zinc-700/60 text-white h-9 text-sm font-mono font-bold hover:border-[#d4af37]/50 focus:border-[#d4af37] transition-colors">
             <SelectValue placeholder="Selecciona un activo" />
           </SelectTrigger>
-          <SelectContent className="bg-slate-800 border-slate-700 text-white max-h-64">
-            {assets.map(asset => (
+          <SelectContent className="bg-zinc-900 border-zinc-700 text-white max-h-64">
+            {filteredAssets.map(asset => (
               <SelectItem key={asset.id} value={asset.symbol} className="font-mono text-sm">
                 {asset.symbol}
               </SelectItem>
             ))}
+            {filteredAssets.length === 0 && (
+              <div className="px-3 py-2 text-xs text-gray-500">Sin activos en esta categoría</div>
+            )}
           </SelectContent>
         </Select>
 
@@ -228,7 +288,7 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
         <div className="flex items-center gap-2">
           <button
             onClick={() => setLotSize(prev => Math.max(minLotSize, Number(prev) - (isStock ? 1 : 0.01)))}
-            className="w-9 h-9 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-bold text-lg flex items-center justify-center transition-colors shrink-0"
+            className="w-9 h-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-lg flex items-center justify-center transition-colors shrink-0"
           >−</button>
           <Input
             type="number"
@@ -237,34 +297,34 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
             value={lotSize}
             onChange={handleLotSizeChange}
             onBlur={handleLotSizeBlur}
-            className="flex-1 bg-slate-800 border-slate-600 text-white text-center font-mono font-bold h-9 text-sm focus:border-cyan-500"
+            className="flex-1 bg-zinc-900 border-zinc-700 text-white text-center font-mono font-bold h-9 text-sm focus:border-[#d4af37]"
           />
           <button
             onClick={() => setLotSize(prev => Number((Number(prev) + (isStock ? 1 : 0.01)).toFixed(2)))}
-            className="w-9 h-9 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-bold text-lg flex items-center justify-center transition-colors shrink-0"
+            className="w-9 h-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-lg flex items-center justify-center transition-colors shrink-0"
           >+</button>
         </div>
       </div>
 
       {/* ── Margen requerido + Apalancamiento ── */}
       <div className="grid grid-cols-2 gap-2 mb-3">
-        <div className="bg-slate-800/50 rounded-lg p-2 border border-slate-700/50">
+        <div className="bg-zinc-900/50 rounded-lg p-2 border border-zinc-700/50">
           <span className="block text-[9px] text-gray-500 uppercase tracking-wide mb-0.5">Margen req.</span>
           <span className="block text-sm font-bold font-mono text-white">${marginRequired.toFixed(2)}</span>
         </div>
-        <div className="bg-slate-800/50 rounded-lg p-2 border border-slate-700/50">
+        <div className="bg-zinc-900/50 rounded-lg p-2 border border-zinc-700/50">
           <span className="block text-[9px] text-gray-500 uppercase tracking-wide mb-0.5">Apalancamiento</span>
-          <span className="block text-sm font-bold font-mono text-cyan-400">1:{leverage}</span>
+          <span className="block text-sm font-bold font-mono text-[#d6ad41]">1:{leverage}</span>
         </div>
       </div>
 
       {/* ── Stop Loss / Take Profit (colapsable) ── */}
       <button
         onClick={() => setShowAdvanced(p => !p)}
-        className="w-full flex items-center justify-between py-2 px-3 rounded-lg bg-slate-800/40 border border-slate-700/40 hover:border-slate-600 transition-colors mb-2"
+        className="w-full flex items-center justify-between py-2 px-3 rounded-lg bg-zinc-900/40 border border-zinc-700/40 hover:border-zinc-600 transition-colors mb-2"
       >
         <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-          <Shield className="w-3 h-3 text-cyan-400" />
+          <Shield className="w-3 h-3 text-[#d6ad41]" />
           Stop Loss / Take Profit
         </span>
         <ChevronDown className={cn('w-3.5 h-3.5 text-gray-500 transition-transform', showAdvanced && 'rotate-180')} />
@@ -284,7 +344,7 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
               placeholder={`Ej: ${bidPrice > 0 ? (bidPrice * 0.99).toFixed(precision) : '0.00'}`}
               value={stopLoss}
               onChange={(e) => setStopLoss(e.target.value)}
-              className="bg-slate-800 border-slate-600 text-white font-mono text-sm h-9 focus:border-red-500/60 placeholder:text-gray-600"
+              className="bg-zinc-900 border-zinc-700 text-white font-mono text-sm h-9 focus:border-red-500/60 placeholder:text-gray-600"
             />
             {stopLoss && slPL !== null && (
               <p className={cn('text-[10px] mt-0.5 font-mono', slPL < 0 ? 'text-red-400' : 'text-green-400')}>
@@ -304,7 +364,7 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
               placeholder={`Ej: ${askPrice > 0 ? (askPrice * 1.01).toFixed(precision) : '0.00'}`}
               value={takeProfit}
               onChange={(e) => setTakeProfit(e.target.value)}
-              className="bg-slate-800 border-slate-600 text-white font-mono text-sm h-9 focus:border-green-500/60 placeholder:text-gray-600"
+              className="bg-zinc-900 border-zinc-700 text-white font-mono text-sm h-9 focus:border-green-500/60 placeholder:text-gray-600"
             />
             {takeProfit && tpPL !== null && (
               <p className={cn('text-[10px] mt-0.5 font-mono', tpPL > 0 ? 'text-green-400' : 'text-red-400')}>
@@ -377,7 +437,7 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
 
       {/* Capital disponible */}
       {accountBalance !== undefined && (
-        <div className="mt-3 pt-3 border-t border-slate-700/50 flex items-center justify-between">
+        <div className="mt-3 pt-3 border-t border-zinc-700/50 flex items-center justify-between">
           <span className="text-[10px] text-gray-500">Capital disponible</span>
           <span className="text-[11px] font-mono font-semibold text-gray-300">
             ${(accountBalance || 0).toFixed(2)}
