@@ -27,6 +27,13 @@ const fmtDate = (d) => {
   return new Date(d).toLocaleString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
+// FIX BUG 1: para trades CERRADAS, profit_loss ya es el valor final.
+// pl_adjustment solo debe sumarse mientras la trade está ABIERTA (floating P/L,
+// ver useTotalPL). En cierres con override, el backend está guardando
+// pl_adjustment == profit_loss, así que sumarlos duplicaba el resultado.
+// Usar SIEMPRE esta función para P/L de trades cerradas, nunca sumar ambos campos.
+const getClosedPL = (t) => Number(t.profit_loss) || 0;
+
 // ── Mini Stat Card ────────────────────────────────────────────
 const MiniStat = ({ label, value, sub, color = 'text-white', icon: Icon, iconColor }) => (
   <Card className="bg-slate-800/60 border-slate-700/50">
@@ -192,7 +199,8 @@ const WeeklyPLChart = ({ trades }) => {
     });
     trades.filter(t => t.status === 'CLOSED' && t.close_time).forEach(t => {
       const entry = week.find(w => w.date === new Date(t.close_time).toDateString());
-      if (entry) entry.pl += (Number(t.profit_loss) || 0) + (Number(t.pl_adjustment) || 0);
+      // FIX BUG 1: antes sumaba profit_loss + pl_adjustment (duplicaba en cierres con override)
+      if (entry) entry.pl += getClosedPL(t);
     });
     return week;
   }, [trades]);
@@ -235,7 +243,8 @@ const RecentActivity = ({ trades }) => {
   return (
     <div className="space-y-1.5">
       {recent.map(t => {
-        const pl = (Number(t.profit_loss) || 0) + (Number(t.pl_adjustment) || 0);
+        // FIX BUG 1: antes sumaba profit_loss + pl_adjustment
+        const pl = getClosedPL(t);
         const isProfit = pl >= 0;
         return (
           <div key={t.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
@@ -264,7 +273,8 @@ const TopSymbols = ({ trades }) => {
     const map = {};
     trades.filter(t => t.status === 'CLOSED').forEach(t => {
       if (!map[t.symbol]) map[t.symbol] = { symbol: t.symbol, pl: 0, count: 0 };
-      map[t.symbol].pl    += (Number(t.profit_loss) || 0) + (Number(t.pl_adjustment) || 0);
+      // FIX BUG 1: antes sumaba profit_loss + pl_adjustment
+      map[t.symbol].pl    += getClosedPL(t);
       map[t.symbol].count += 1;
     });
     return Object.values(map).sort((a, b) => b.count - a.count).slice(0, 5);
@@ -295,16 +305,24 @@ const DashboardPage = () => {
   const [trades, setTrades]               = useState([]);
   const [loadingTrades, setLoadingTrades] = useState(true);
 
+  // FIX BUG 2: estado local que refleja cambios en `profiles` en tiempo real,
+  // para no depender exclusivamente del `user` del AuthContext (que solo se
+  // actualiza en login/refresh y no escucha la tabla `profiles`).
+  const [liveProfile, setLiveProfile] = useState(null);
+
   const getUserData = useCallback(() => {
     if (!user) return null;
     if (user.email === 'demo@tradea.com') {
       return { id: 'demo-user-id', email: 'demo@tradea.com', full_name: 'Usuario Demo',
         balance: 10000, bonus: 500, profit: 1250, isAdmin: false, isDemo: true, trading_locked: false };
     }
+    // FIX BUG 2: prioriza liveProfile (dato fresco de la suscripción realtime)
+    // sobre el user del AuthContext, que puede estar desactualizado.
+    const src = liveProfile || user;
     return { id: user.id, email: user.email, full_name: user.full_name || user.email,
-      balance: user.balance ?? 0, bonus: user.bonus ?? 0, profit: user.profit ?? 0,
-      isAdmin: user.isAdmin || false, isDemo: false, trading_locked: user.trading_locked || false };
-  }, [user]);
+      balance: src.balance ?? 0, bonus: src.bonus ?? 0, profit: src.profit ?? 0,
+      isAdmin: user.isAdmin || false, isDemo: false, trading_locked: src.trading_locked || false };
+  }, [user, liveProfile]);
 
   const userData = getUserData();
 
@@ -341,13 +359,31 @@ const DashboardPage = () => {
     }
   }, [user, fetchTrades]);
 
+  // FIX BUG 2: suscripción realtime a la tabla `profiles`. Cualquier ajuste de
+  // balance/bonus/profit hecho fuera del flujo de trades (ej. admin, depósito)
+  // ahora se refleja al instante sin necesidad de recargar la página.
+  useEffect(() => {
+    if (!user?.id || user.email === 'demo@tradea.com') return;
+
+    const ch = supabase
+      .channel(`dashboard:profile:${user.id}`)
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+        (payload) => setLiveProfile(payload.new)
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(ch);
+  }, [user?.id, user?.email]);
+
   const openTrades   = useMemo(() => trades.filter(t => t.status === 'OPEN'),   [trades]);
   const closedTrades = useMemo(() => trades.filter(t => t.status === 'CLOSED'), [trades]);
   const floatingPL   = useTotalPL(openTrades);
 
   const stats = useMemo(() => {
     if (!closedTrades.length) return null;
-    const pls     = closedTrades.map(t => (Number(t.profit_loss) || 0) + (Number(t.pl_adjustment) || 0));
+    // FIX BUG 1: antes usaba profit_loss + pl_adjustment, duplicando best/worst/avg
+    const pls     = closedTrades.map(getClosedPL);
     const winners = pls.filter(p => p > 0);
     const losers  = pls.filter(p => p < 0);
     const daysSet = new Set(closedTrades.map(t => new Date(t.open_time).toDateString()));
@@ -440,7 +476,7 @@ const DashboardPage = () => {
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
           <MiniStat label="Win Rate"       value={`${stats.winRate.toFixed(1)}%`}
-            sub={`${closedTrades.filter(t=>((Number(t.profit_loss)||0)+(Number(t.pl_adjustment)||0))>0).length}/${stats.total} ops`}
+            sub={`${closedTrades.filter(t=>getClosedPL(t)>0).length}/${stats.total} ops`}
             color={stats.winRate >= 50 ? 'text-green-400' : 'text-red-400'} icon={Target}      iconColor="bg-green-500/20" />
           <MiniStat label="Mejor Op."      value={fmt(stats.best)}    color="text-green-400"   icon={Trophy}        iconColor="bg-yellow-500/20" />
           <MiniStat label="Peor Op."       value={fmt(stats.worst)}   color="text-red-400"     icon={AlertTriangle} iconColor="bg-red-500/20" />
