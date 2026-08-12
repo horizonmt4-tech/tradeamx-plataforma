@@ -11,7 +11,6 @@ import { useMarketHours } from '@/hooks/useMarketHours';
 import { MarketStatusBadge, MarketClosedBanner } from '@/components/trading/MarketStatusBadge';
 
 // ── Categorías de mercado para el filtro ──────────────────────
-// Usa el campo "category" que ya viene de la tabla `assets` en Supabase
 const CATEGORY_LABELS = {
   all:         'Todos',
   forex:       'Forex',
@@ -24,6 +23,30 @@ const CATEGORY_LABELS = {
 
 const CATEGORY_ORDER = ['all', 'forex', 'stocks', 'indices', 'metals', 'commodities', 'crypto'];
 
+// FIX CRÍTICO — bug de margen en pares donde USD es la moneda BASE
+// (USD/JPY, USD/CAD, USD/CHF, USD/MXN, USD/HKD, USD/ILS, etc.)
+//
+// La fórmula (contractSize * lotSize * price) / leverage solo es correcta
+// cuando USD es la moneda COTIZADA (ej: EUR/USD, GBP/USD) — ahí el resultado
+// ya está en dólares. Cuando USD es la moneda BASE (USD/XXX), 1 unidad de
+// la posición YA vale $1 USD — no se debe multiplicar por el precio, porque
+// el precio representa cuántas unidades de la OTRA moneda equivalen a 1 USD,
+// no el valor en USD de la posición.
+//
+// Ejemplo real: USD/JPY a 150, lote 0.01, contract_size 100,000, leverage 100:
+//   INCORRECTO: (100000 * 0.01 * 150) / 100 = $1,500  (¡150x inflado!)
+//   CORRECTO:   (100000 * 0.01 * 1)   / 100 = $10.00
+//
+// Este bug hacía que el botón Comprar/Vender quedara DESHABILITADO para
+// USD/JPY con cualquier balance normal, porque marginRequired > accountBalance
+// siempre resultaba verdadero — el cliente ni podía intentar la operación.
+const getMarginPrice = (symbol, price) => {
+  if (!symbol || !symbol.includes('/')) return price;
+  const [base, quote] = symbol.toUpperCase().split('/');
+  const isUsdBase = base === 'USD' && quote !== 'USD';
+  return isUsdBase ? 1 : price;
+};
+
 const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSymbol, accountBalance }) => {
   const { prices, assetStatus } = useAssets();
   const [lotSize, setLotSize]   = useState(0.01);
@@ -34,17 +57,13 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
   const [selectedCategory, setSelectedCategory] = useState('all');
   const { toast } = useToast();
 
-  // ── Market hours hook ──
   const { isOpen, isClosed, marketType, reason, nextOpen, schedule } = useMarketHours(selectedSymbol);
 
-  // Categorías realmente disponibles en los activos que llegaron (evita mostrar
-  // un chip de una categoría que no tiene ningún activo cargado)
   const availableCategories = useMemo(() => {
     const present = new Set(assets.map(a => a.category).filter(Boolean));
     return CATEGORY_ORDER.filter(c => c === 'all' || present.has(c));
   }, [assets]);
 
-  // Lista de activos filtrada por la categoría seleccionada
   const filteredAssets = useMemo(() => {
     if (selectedCategory === 'all') return assets;
     return assets.filter(a => a.category === selectedCategory);
@@ -56,8 +75,6 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
     }
   }, [assets, selectedSymbol, setSelectedSymbol]);
 
-  // Si al cambiar de categoría el símbolo actual ya no aparece en la lista
-  // filtrada, selecciona automáticamente el primero de la nueva categoría
   useEffect(() => {
     if (filteredAssets.length === 0) return;
     const stillValid = filteredAssets.some(a => a.symbol === selectedSymbol);
@@ -67,7 +84,6 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
 
-  // Reset SL/TP al cambiar activo
   useEffect(() => {
     setStopLoss('');
     setTakeProfit('');
@@ -100,11 +116,12 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
     if (lotSize !== '' && Number(lotSize) < minLotSize) setLotSize(minLotSize);
   }, [selectedSymbol, minLotSize]);
 
+  // FIX: usar getMarginPrice() en vez de askPrice directo — corrige el
+  // margen inflado en pares donde USD es la moneda base (USD/JPY, etc.)
   const marginRequired = selectedSymbol && lotSize > 0
-    ? (contractSize * (Number(lotSize) || 0) * askPrice) / leverage
+    ? (contractSize * (Number(lotSize) || 0) * getMarginPrice(selectedSymbol, askPrice)) / leverage
     : 0;
 
-  // Calcular P/L estimado para SL/TP
   const calcPL = (price, type) => {
     if (!price || !lotSize || !askPrice) return null;
     const entry = type === 'BUY' ? askPrice : bidPrice;
@@ -118,7 +135,6 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
   const handleTrade = async (type) => {
     if (!onOpenTrade) return;
 
-    // Bloquear si el mercado está cerrado
     if (isClosed) {
       toast({
         title: 'Mercado cerrado',
@@ -145,7 +161,6 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
       toast({ title: 'Balance insuficiente', description: 'No tienes suficiente margen libre.', variant: 'destructive' }); return;
     }
 
-    // Validar SL/TP si están configurados
     if (stopLoss) {
       const sl = Number(stopLoss);
       if (type === 'BUY'  && sl >= executionPrice) { toast({ title: 'SL inválido', description: 'Stop Loss debe ser menor al precio de entrada para BUY.', variant: 'destructive' }); return; }
@@ -167,7 +182,6 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
         stop_loss:   stopLoss   ? Number(stopLoss)   : null,
         take_profit: takeProfit ? Number(takeProfit) : null,
       });
-      // Limpiar SL/TP tras operar
       setStopLoss('');
       setTakeProfit('');
     } catch (err) {
@@ -181,7 +195,6 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
   const handleLotSizeChange = (e) => { const v = e.target.value; setLotSize(v === '' ? '' : parseFloat(v)); };
   const handleLotSizeBlur   = () => { if (lotSize === '' || Number(lotSize) < minLotSize) setLotSize(minLotSize); };
 
-  // Condición unificada de deshabilitado para botones
   const isTradeDisabled = isLoading || !selectedAsset || !isSupported || marginRequired > (accountBalance || 0) || isClosed;
 
   return (
@@ -192,7 +205,6 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
         <div className="flex items-center justify-between mb-1">
           <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Panel de Trading</span>
           <div className="flex items-center gap-2">
-            {/* Badge de estado del mercado */}
             {selectedSymbol && (
               <MarketStatusBadge
                 isOpen={isOpen}
@@ -208,7 +220,6 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
           </div>
         </div>
 
-        {/* ── Filtro de categoría de mercado ── */}
         <div className="flex flex-wrap gap-1.5 mb-2">
           {availableCategories.map((cat) => (
             <button
@@ -226,7 +237,6 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
           ))}
         </div>
 
-        {/* Selector de activo (ya filtrado por categoría) */}
         <Select value={selectedSymbol || ''} onValueChange={handleSymbolChange}>
           <SelectTrigger className="w-full bg-zinc-900/80 border-zinc-700/60 text-white h-9 text-sm font-mono font-bold hover:border-[#d4af37]/50 focus:border-[#d4af37] transition-colors">
             <SelectValue placeholder="Selecciona un activo" />
@@ -271,7 +281,6 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
         </div>
       </div>
 
-      {/* Spread */}
       {spread > 0 && (
         <div className="flex justify-center mb-3">
           <span className="text-[10px] text-gray-500 font-mono">
