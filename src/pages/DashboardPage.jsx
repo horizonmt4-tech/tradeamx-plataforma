@@ -18,9 +18,13 @@ import { useTotalPL } from '@/hooks/useRealTimePL';
 import { cn } from '@/lib/utils';
 
 // ── Helpers ───────────────────────────────────────────────────
+// FIX BUG 3: antes usaba Math.abs() y solo agregaba "+" para positivos,
+// por lo que los valores NEGATIVOS (balance en rojo, peor operación,
+// drawdown, etc.) se mostraban SIN el signo "-", pareciendo positivos.
 const fmt = (n) => {
   const num = Number(n) || 0;
-  return `${num >= 0 ? '+' : ''}$${Math.abs(num).toFixed(2)}`;
+  const sign = num > 0 ? '+' : num < 0 ? '-' : '';
+  return `${sign}$${Math.abs(num).toFixed(2)}`;
 };
 const fmtDate = (d) => {
   if (!d) return '—';
