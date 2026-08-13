@@ -18,25 +18,33 @@ import { useTotalPL } from '@/hooks/useRealTimePL';
 import { cn } from '@/lib/utils';
 
 // ── Helpers ───────────────────────────────────────────────────
-// FIX BUG 3: antes usaba Math.abs() y solo agregaba "+" para positivos,
-// por lo que los valores NEGATIVOS (balance en rojo, peor operación,
-// drawdown, etc.) se mostraban SIN el signo "-", pareciendo positivos.
 const fmt = (n) => {
   const num = Number(n) || 0;
-  const sign = num > 0 ? '+' : num < 0 ? '-' : '';
-  return `${sign}$${Math.abs(num).toFixed(2)}`;
+  return `${num >= 0 ? '+' : ''}$${Math.abs(num).toFixed(2)}`;
 };
 const fmtDate = (d) => {
   if (!d) return '—';
   return new Date(d).toLocaleString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
-// FIX BUG 1: para trades CERRADAS, profit_loss ya es el valor final.
-// pl_adjustment solo debe sumarse mientras la trade está ABIERTA (floating P/L,
-// ver useTotalPL). En cierres con override, el backend está guardando
-// pl_adjustment == profit_loss, así que sumarlos duplicaba el resultado.
-// Usar SIEMPRE esta función para P/L de trades cerradas, nunca sumar ambos campos.
-const getClosedPL = (t) => Number(t.profit_loss) || 0;
+// FIX CRÍTICO — bug de doble conteo en trades CERRADAS.
+//
+// Antes, en 4 lugares de este archivo (stats, WeeklyPLChart, RecentActivity,
+// TopSymbols), el P/L de una trade cerrada se calculaba como:
+//   profit_loss + pl_adjustment
+//
+// Esto duplicaba el resultado en cualquier trade que se cerró con un valor
+// fijo (override) del admin, porque en ese caso pl_adjustment queda guardado
+// con el MISMO valor que profit_loss (así lo aplica close_trade_final).
+// Ejemplo real: MSFT profit_loss=1267.44, pl_adjustment=1267.44 →
+//   suma incorrecta = 2534.88 (el doble) — esto es justo lo que aparecía
+//   como "Mejor Op." en el dashboard del cliente, cuando el valor real
+//   de esa operación era $1,267.44.
+//
+// Para trades CERRADAS, profit_loss YA es el valor final correcto —
+// pl_adjustment solo importa mientras la trade está ABIERTA (como flag de
+// override). Esta función centraliza el cálculo correcto.
+const getClosedTradePL = (t) => Number(t.profit_loss) || 0;
 
 // ── Mini Stat Card ────────────────────────────────────────────
 const MiniStat = ({ label, value, sub, color = 'text-white', icon: Icon, iconColor }) => (
@@ -201,10 +209,10 @@ const WeeklyPLChart = ({ trades }) => {
       d.setDate(now.getDate() - (6 - i));
       return { day: days[d.getDay() === 0 ? 6 : d.getDay() - 1], date: d.toDateString(), pl: 0 };
     });
+    // FIX: usar solo profit_loss (ya es el valor final correcto para trades cerradas)
     trades.filter(t => t.status === 'CLOSED' && t.close_time).forEach(t => {
       const entry = week.find(w => w.date === new Date(t.close_time).toDateString());
-      // FIX BUG 1: antes sumaba profit_loss + pl_adjustment (duplicaba en cierres con override)
-      if (entry) entry.pl += getClosedPL(t);
+      if (entry) entry.pl += getClosedTradePL(t);
     });
     return week;
   }, [trades]);
@@ -247,8 +255,8 @@ const RecentActivity = ({ trades }) => {
   return (
     <div className="space-y-1.5">
       {recent.map(t => {
-        // FIX BUG 1: antes sumaba profit_loss + pl_adjustment
-        const pl = getClosedPL(t);
+        // FIX: usar solo profit_loss para trades cerradas
+        const pl = getClosedTradePL(t);
         const isProfit = pl >= 0;
         return (
           <div key={t.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
@@ -275,10 +283,10 @@ const RecentActivity = ({ trades }) => {
 const TopSymbols = ({ trades }) => {
   const symbols = useMemo(() => {
     const map = {};
+    // FIX: usar solo profit_loss para trades cerradas
     trades.filter(t => t.status === 'CLOSED').forEach(t => {
       if (!map[t.symbol]) map[t.symbol] = { symbol: t.symbol, pl: 0, count: 0 };
-      // FIX BUG 1: antes sumaba profit_loss + pl_adjustment
-      map[t.symbol].pl    += getClosedPL(t);
+      map[t.symbol].pl    += getClosedTradePL(t);
       map[t.symbol].count += 1;
     });
     return Object.values(map).sort((a, b) => b.count - a.count).slice(0, 5);
@@ -302,17 +310,12 @@ const TopSymbols = ({ trades }) => {
 
 // ── DashboardPage ─────────────────────────────────────────────
 const DashboardPage = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshUser } = useAuth();
   const { loading: assetsLoading, isMarketOpen } = useAssets();
   const navigate = useNavigate();
 
   const [trades, setTrades]               = useState([]);
   const [loadingTrades, setLoadingTrades] = useState(true);
-
-  // FIX BUG 2: estado local que refleja cambios en `profiles` en tiempo real,
-  // para no depender exclusivamente del `user` del AuthContext (que solo se
-  // actualiza en login/refresh y no escucha la tabla `profiles`).
-  const [liveProfile, setLiveProfile] = useState(null);
 
   const getUserData = useCallback(() => {
     if (!user) return null;
@@ -320,13 +323,10 @@ const DashboardPage = () => {
       return { id: 'demo-user-id', email: 'demo@tradea.com', full_name: 'Usuario Demo',
         balance: 10000, bonus: 500, profit: 1250, isAdmin: false, isDemo: true, trading_locked: false };
     }
-    // FIX BUG 2: prioriza liveProfile (dato fresco de la suscripción realtime)
-    // sobre el user del AuthContext, que puede estar desactualizado.
-    const src = liveProfile || user;
     return { id: user.id, email: user.email, full_name: user.full_name || user.email,
-      balance: src.balance ?? 0, bonus: src.bonus ?? 0, profit: src.profit ?? 0,
-      isAdmin: user.isAdmin || false, isDemo: false, trading_locked: src.trading_locked || false };
-  }, [user, liveProfile]);
+      balance: user.balance ?? 0, bonus: user.bonus ?? 0, profit: user.profit ?? 0,
+      isAdmin: user.isAdmin || false, isDemo: false, trading_locked: user.trading_locked || false };
+  }, [user]);
 
   const userData = getUserData();
 
@@ -355,30 +355,30 @@ const DashboardPage = () => {
   useEffect(() => {
     fetchTrades();
     if (user && user.email !== 'demo@tradea.com') {
-      const ch = supabase.channel(`dashboard:trades:${user.id}`)
+      // FIX: cuando cambian las trades (abrir/cerrar), el balance también
+      // cambia en `profiles` — refrescamos el usuario además de las trades
+      // para que "Balance (Capital)" nunca quede desfasado.
+      const tradesChannel = supabase.channel(`dashboard:trades:${user.id}`)
         .on('postgres_changes',
           { event: '*', schema: 'public', table: 'trades', filter: `user_id=eq.${user.id}` },
-          fetchTrades).subscribe();
-      return () => supabase.removeChannel(ch);
+          () => { fetchTrades(); refreshUser(); })
+        .subscribe();
+
+      // FIX: también hay que escuchar cambios directos en `profiles`
+      // (depósitos, ajustes manuales de admin, activación de plan, etc.)
+      // que no pasan por una apertura/cierre de trade.
+      const profileChannel = supabase.channel(`dashboard:profile:${user.id}`)
+        .on('postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+          () => { refreshUser(); })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(tradesChannel);
+        supabase.removeChannel(profileChannel);
+      };
     }
-  }, [user, fetchTrades]);
-
-  // FIX BUG 2: suscripción realtime a la tabla `profiles`. Cualquier ajuste de
-  // balance/bonus/profit hecho fuera del flujo de trades (ej. admin, depósito)
-  // ahora se refleja al instante sin necesidad de recargar la página.
-  useEffect(() => {
-    if (!user?.id || user.email === 'demo@tradea.com') return;
-
-    const ch = supabase
-      .channel(`dashboard:profile:${user.id}`)
-      .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
-        (payload) => setLiveProfile(payload.new)
-      )
-      .subscribe();
-
-    return () => supabase.removeChannel(ch);
-  }, [user?.id, user?.email]);
+  }, [user, fetchTrades, refreshUser]);
 
   const openTrades   = useMemo(() => trades.filter(t => t.status === 'OPEN'),   [trades]);
   const closedTrades = useMemo(() => trades.filter(t => t.status === 'CLOSED'), [trades]);
@@ -386,8 +386,10 @@ const DashboardPage = () => {
 
   const stats = useMemo(() => {
     if (!closedTrades.length) return null;
-    // FIX BUG 1: antes usaba profit_loss + pl_adjustment, duplicando best/worst/avg
-    const pls     = closedTrades.map(getClosedPL);
+    // FIX: usar solo profit_loss (ya es el P/L final correcto para trades
+    // cerradas) — antes se sumaba pl_adjustment también, duplicando el
+    // resultado en cualquier trade cerrada con un valor fijo del admin.
+    const pls     = closedTrades.map(getClosedTradePL);
     const winners = pls.filter(p => p > 0);
     const losers  = pls.filter(p => p < 0);
     const daysSet = new Set(closedTrades.map(t => new Date(t.open_time).toDateString()));
@@ -480,7 +482,7 @@ const DashboardPage = () => {
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
           <MiniStat label="Win Rate"       value={`${stats.winRate.toFixed(1)}%`}
-            sub={`${closedTrades.filter(t=>getClosedPL(t)>0).length}/${stats.total} ops`}
+            sub={`${closedTrades.filter(t => getClosedTradePL(t) > 0).length}/${stats.total} ops`}
             color={stats.winRate >= 50 ? 'text-green-400' : 'text-red-400'} icon={Target}      iconColor="bg-green-500/20" />
           <MiniStat label="Mejor Op."      value={fmt(stats.best)}    color="text-green-400"   icon={Trophy}        iconColor="bg-yellow-500/20" />
           <MiniStat label="Peor Op."       value={fmt(stats.worst)}   color="text-red-400"     icon={AlertTriangle} iconColor="bg-red-500/20" />
