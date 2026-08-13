@@ -25,13 +25,20 @@ const GlobalHeader = ({ user, profile, loading, signOut, openTrades = [] }) => {
 
   // Usar profile si está disponible (tiene balance/bonus actualizados), fallback a user
   const activeUser = profile || user;
-  const balance = Number(activeUser?.balance) || 0;
-  const bonus = Number(activeUser?.bonus) || 0;
 
   const totalMargin = useMemo(
     () => openTrades.reduce((acc, t) => acc + (Number(t.margin) || 0), 0),
     [openTrades]
   );
+
+  // FIX BUG A: el campo `balance` en BD es el margen LIBRE (fondos no bloqueados
+  // en operaciones abiertas), no el balance total. Antes este componente lo
+  // mostraba crudo, mientras DashboardPage sí le sumaba el margen bloqueado —
+  // dos definiciones distintas del mismo número en dos pantallas. Se replica
+  // aquí el mismo criterio que en DashboardPage para que ambos coincidan siempre.
+  const freeMargin = Number(activeUser?.balance) || 0;
+  const balance = freeMargin + totalMargin;
+  const bonus = Number(activeUser?.bonus) || 0;
 
   const equity = balance + bonus + floatingPL;
   const available = equity - totalMargin;

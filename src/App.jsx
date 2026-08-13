@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
+import { supabase } from '@/lib/supabaseClient';
 
 // Pages
 import HomePage from '@/pages/HomePage';
@@ -81,7 +82,54 @@ import { Analytics } from '@vercel/analytics/react';
 
 const HeaderWrapper = () => {
   const { user, profile, loading, signOut } = useSupabaseAuth();
-  return <GlobalHeader user={user} profile={profile} loading={loading} signOut={signOut} />;
+
+  // FIX BUG B: antes NUNCA se le pasaba `openTrades` a <GlobalHeader />, así que
+  // ahí siempre caía en el default `openTrades = []` — por eso Margen mostraba
+  // $0.00 y Nv. Margen ∞ sin importar cuántas operaciones abiertas hubiera.
+  // Aquí se hace el mismo patrón de fetch + suscripción realtime que ya usa
+  // DashboardPage, pero filtrando solo trades con status OPEN.
+  const [openTrades, setOpenTrades] = useState([]);
+
+  useEffect(() => {
+    if (!user?.id) { setOpenTrades([]); return; }
+    if (user.email === 'demo@tradea.com') { setOpenTrades([]); return; }
+
+    const fetchOpenTrades = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('trades')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'OPEN');
+        if (error) throw error;
+        setOpenTrades(data || []);
+      } catch (err) {
+        console.error('Error fetching open trades (header):', err);
+        setOpenTrades([]);
+      }
+    };
+
+    fetchOpenTrades();
+
+    const ch = supabase
+      .channel(`header:trades:${user.id}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'trades', filter: `user_id=eq.${user.id}` },
+        fetchOpenTrades)
+      .subscribe();
+
+    return () => supabase.removeChannel(ch);
+  }, [user?.id, user?.email]);
+
+  return (
+    <GlobalHeader
+      user={user}
+      profile={profile}
+      loading={loading}
+      signOut={signOut}
+      openTrades={openTrades}
+    />
+  );
 };
 
 function AppContent() {

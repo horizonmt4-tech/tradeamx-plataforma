@@ -18,9 +18,19 @@ import { useTotalPL } from '@/hooks/useRealTimePL';
 import { cn } from '@/lib/utils';
 
 // ── Helpers ───────────────────────────────────────────────────
+// FIX: fmt() perdía el signo "-" en números negativos (usaba Math.abs sin
+// reponer el signo), haciendo que un balance negativo se viera como si
+// fuera positivo. Ahora siempre muestra "+" para positivos y "-" para
+// negativos, de forma explícita.
 const fmt = (n) => {
   const num = Number(n) || 0;
-  return `${num >= 0 ? '+' : ''}$${Math.abs(num).toFixed(2)}`;
+  const sign = num > 0 ? '+' : num < 0 ? '-' : '';
+  return `${sign}$${Math.abs(num).toFixed(2)}`;
+};
+// Color asociado al signo — rojo si negativo, verde si positivo, blanco si es cero
+const fmtColor = (n) => {
+  const num = Number(n) || 0;
+  return num > 0 ? 'text-green-400' : num < 0 ? 'text-red-400' : 'text-white';
 };
 const fmtDate = (d) => {
   if (!d) return '—';
@@ -457,9 +467,9 @@ const DashboardPage = () => {
 
       {/* Account Overview (Fix visual presentation of DB data) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <MiniStat label="Balance (Capital)" value={fmt(balance)} icon={CircleDollarSign} iconColor="bg-green-500/20" color="text-white" />
-        <MiniStat label="Equidad" value={fmt(equity)} icon={Activity} iconColor="bg-blue-500/20" color="text-white" />
-        <MiniStat label="Margen Libre" value={fmt(freeMargin)} icon={CreditCard} iconColor="bg-purple-500/20" color="text-white" />
+        <MiniStat label="Balance (Capital)" value={fmt(balance)} icon={CircleDollarSign} iconColor="bg-green-500/20" color={fmtColor(balance)} />
+        <MiniStat label="Equidad" value={fmt(equity)} icon={Activity} iconColor="bg-blue-500/20" color={fmtColor(equity)} />
+        <MiniStat label="Margen Libre" value={fmt(freeMargin)} icon={CreditCard} iconColor="bg-purple-500/20" color={fmtColor(freeMargin)} />
         <MiniStat label="P/L Flotante" value={fmt(floatingPL)} icon={floatingPL >= 0 ? TrendingUp : TrendingDown} iconColor={floatingPL >= 0 ? "bg-green-500/20" : "bg-red-500/20"} color={floatingPL >= 0 ? 'text-green-400' : 'text-red-400'} />
       </div>
 
