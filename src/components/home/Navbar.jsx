@@ -51,10 +51,7 @@ const Navbar = () => {
   };
 
   return (
-    // FIX iOS: paddingTop con safe-area-inset-top para que el navbar completo
-    // (incluyendo el contenido) respete el notch / Dynamic Island del iPhone.
-    // La altura total del nav ahora es 80px + el safe-area, en vez de quedar
-    // 80px fijos que en iOS se recortan parcialmente bajo la barra de estado.
+    // FIX iOS: paddingTop con safe-area-inset-top para respetar el notch / Dynamic Island
     <nav
       className="fixed top-0 w-full z-50 glass-effect border-b border-white/5 bg-[#0a0f1a]/95 backdrop-blur-md transition-all duration-300"
       style={{
@@ -74,8 +71,10 @@ const Navbar = () => {
               window.scrollTo({ top: 0, behavior: 'smooth' });
               closeMobileMenu();
             }}>
+              {/* FIX: logo local en /public en vez de la URL de horizons-cdn.hostinger.com
+                  que dejó de existir (404) tras migrar el proyecto fuera del builder */}
               <img
-                src="https://horizons-cdn.hostinger.com/4cbc99ef-1375-4750-b360-c2cd4a566cc0/2fd39ff36c91274f9c9360d45b501e13.png"
+                src="/IMG-20260210-WA0040.jpg"
                 alt="TradeAMX - Funding Tomorrow's Traders"
                 className="h-10 md:h-12 w-auto object-contain"
               />
@@ -177,8 +176,6 @@ const Navbar = () => {
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            // FIX iOS: top dinámico = altura real del navbar (80px + safe-area)
-            // en vez de un valor fijo "top-20" que no consideraba el notch.
             className="md:hidden absolute left-0 right-0 bg-[#0f172a] border-b border-gray-800 shadow-2xl"
             style={{ top: 'calc(5rem + env(safe-area-inset-top))' }}
             initial={{ opacity: 0, height: 0 }}
