@@ -41,7 +41,7 @@ const HeroSection = () => {
         >
           <div className="absolute inset-0 bg-[#d4af37]/10 blur-[60px] rounded-full"></div>
           <img 
-            src="https://horizons-cdn.hostinger.com/4cbc99ef-1375-4750-b360-c2cd4a566cc0/2fd39ff36c91274f9c9360d45b501e13.png" 
+            src="/IMG-20260210-WA0040.jpg" 
             alt="TradeAMX - Funding Tomorrow's Traders" 
             className="w-[120px] md:w-[150px] h-auto object-contain relative z-10 drop-shadow-2xl"
           />
