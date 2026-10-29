@@ -22,37 +22,7 @@ import React from 'react';
               </p>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.7, delay: 0.4 }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto"
-            >
-              
-
-
-
-              <Card className="glass-effect border-gray-700 flex flex-col items-center justify-center p-6 text-center shadow-lg">
-                <img 
-                  alt="Logo de Mastercard a color" 
-                  className="h-16 object-contain mb-4" 
-                 src="https://horizons-cdn.hostinger.com/4cbc99ef-1375-4750-b360-c2cd4a566cc0/f4dedea6af858785949a1ec61b7c820c.png" />
-                <CardContent className="p-0 text-white font-semibold text-lg">
-                  Mastercard
-                </CardContent>
-              </Card>
-
-              <Card className="glass-effect border-gray-700 flex flex-col items-center justify-center p-6 text-center shadow-lg">
-                <img 
-                  alt="Logo de SPEI a color" 
-                  className="h-16 object-contain mb-4" 
-                 src="https://horizons-cdn.hostinger.com/4cbc99ef-1375-4750-b360-c2cd4a566cc0/7af87dd0aee85247851a37179b4c065b.png" />
-                <CardContent className="p-0 text-white font-semibold text-lg">
-                  SPEI
-                </CardContent>
-              </Card>
-            </motion.div>
+            
 
             <motion.div
               initial={{ opacity: 0, y: 50 }}
