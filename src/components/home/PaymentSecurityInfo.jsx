@@ -30,16 +30,7 @@ import React from 'react';
               className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto"
             >
               
-<Card className="glass-effect border-gray-700 flex flex-col items-center justify-center p-6 text-center shadow-lg">
-  <img
-    alt="Logo de Visa a color"
-    className="h-16 object-contain mb-4"
-    src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg"
-  />
-  <CardContent className="p-0 text-white font-semibold text-lg">
-    Visa
-  </CardContent>
-</Card>
+
 
 
               <Card className="glass-effect border-gray-700 flex flex-col items-center justify-center p-6 text-center shadow-lg">
