@@ -84,7 +84,7 @@ const AnalysisPage = () => {
 
       const priceForMargin = isUsdBase ? 1 : tradeData.open_price;
 
-      const margin = (selectedAsset.contract_size * tradeData.lot_size * priceForMargin) / selectedAsset.leverage;
+      const asset = assets.find(   a => a.symbol === tradeData.symbol );  if (!asset) {   throw new Error('No se encontró la configuración del activo seleccionado.'); }  const contractSize = Number(asset.contract_size); const leverage = Number(asset.leverage); const lotSize = Number(tradeData.lot_size); const openPrice = Number(tradeData.open_price);  if (   !Number.isFinite(contractSize) || contractSize <= 0 ||   !Number.isFinite(leverage) || leverage <= 0 ||   !Number.isFinite(lotSize) || lotSize <= 0 ||   !Number.isFinite(openPrice) || openPrice <= 0 ) {   throw new Error('Los datos del activo o de la operación no son válidos.'); }  const symbol = tradeData.symbol.toUpperCase(); const [base, quote] = symbol.includes('/')   ? symbol.split('/')   : [null, null];  const isUsdBase = base === 'USD' && quote !== 'USD'; const priceForMargin = isUsdBase ? 1 : openPrice;  const margin =   (contractSize * lotSize * priceForMargin) / leverage;
 
       const { data, error } = await supabase.rpc('open_trade', {
         p_user_id: user.id,
