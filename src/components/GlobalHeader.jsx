@@ -70,11 +70,7 @@ const GlobalHeader = ({ user, profile, loading, signOut, openTrades = [] }) => {
 
         {/* Logo */}
         <button onClick={() => navigate('/dashboard')} className="shrink-0 mr-2">
-          <img
-            src="https://horizons-cdn.hostinger.com/4cbc99ef-1375-4750-b360-c2cd4a566cc0/2fd39ff36c91274f9c9360d45b501e13.png"
-            alt="TradeaMX"
-            className="h-7 w-auto object-contain"
-          />
+          
         </button>
 
         {/* Nav links */}
