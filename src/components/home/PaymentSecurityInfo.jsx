@@ -29,15 +29,18 @@ import React from 'react';
               transition={{ duration: 0.7, delay: 0.4 }}
               className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto"
             >
-              <Card className="glass-effect border-gray-700 flex flex-col items-center justify-center p-6 text-center shadow-lg">
-                <img 
-                  alt="Logo de Visa a color" 
-                  className="h-16 object-contain mb-4" 
-                 src="https://horizons-cdn.hostinger.com/4cbc99ef-1375-4750-b360-c2cd4a566cc0/368255377d5ec5156cb29a8de8c19ac7.webp" />
-                <CardContent className="p-0 text-white font-semibold text-lg">
-                  Visa
-                </CardContent>
-              </Card>
+              
+<Card className="glass-effect border-gray-700 flex flex-col items-center justify-center p-6 text-center shadow-lg">
+  <img
+    alt="Logo de Visa a color"
+    className="h-16 object-contain mb-4"
+    src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg"
+  />
+  <CardContent className="p-0 text-white font-semibold text-lg">
+    Visa
+  </CardContent>
+</Card>
+
 
               <Card className="glass-effect border-gray-700 flex flex-col items-center justify-center p-6 text-center shadow-lg">
                 <img 
