@@ -53,13 +53,7 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center mb-12 text-center">
             {/* Logo Section */}
-            <Link to="/" className="flex flex-col items-center space-y-4 mb-8">
-               <img 
-                src="https://horizons-cdn.hostinger.com/4cbc99ef-1375-4750-b360-c2cd4a566cc0/2fd39ff36c91274f9c9360d45b501e13.png" 
-                alt="TradeAMX - Funding Tomorrow's Traders" 
-                className="h-[60px] w-auto object-contain"
-              />
-            </Link>
+            
             
             <p className="text-gray-400 text-sm leading-relaxed max-w-lg mb-8">
               Empowering traders with professional capital. Join the fastest growing prop firm in Latin America and trade with confidence.
