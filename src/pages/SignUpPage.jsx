@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabaseClient';
-import { Loader2, ArrowLeft, TrendingUp, CheckCircle, Lock, Ticket } from 'lucide-react';
+import { Loader2, ArrowLeft, TrendingUp, CheckCircle, Lock } from 'lucide-react';
 import PaymentConfirmationBadge from '@/components/PaymentConfirmationBadge';
 
 const SignUpPage = () => {
@@ -15,8 +15,8 @@ const SignUpPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName]             = useState('');
   const [phoneNumber, setPhoneNumber]       = useState('');
-  const [invitationCode, setInvitationCode] = useState('');
-  const [codeStatus, setCodeStatus]         = useState(null); // null | 'valid' | 'invalid'
+  
+  
   const [loading, setLoading]               = useState(false);
   const [plan, setPlan]                     = useState(null);
   const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
@@ -29,14 +29,16 @@ const SignUpPage = () => {
   const planId     = searchParams.get('plan_id');
   const emailParam = searchParams.get('email');
   // Soporte para código en URL: /register?code=TAURUX2026
-  const codeParam  = searchParams.get('code');
+  
 
   useEffect(() => {
-    if (emailParam)  setEmail(emailParam);
-    if (codeParam)   setInvitationCode(codeParam.toUpperCase());
-    if (sessionId && planId) {
-      setIsPaymentConfirmed(true);
-      fetchPlanDetails(planId);
+  if (emailParam) setEmail(emailParam);
+
+  if (sessionId && planId) {
+    setIsPaymentConfirmed(true);
+    fetchPlanDetails(planId);
+  }
+}, [sessionId, planId, emailParam]);
     }
   }, [sessionId, planId, emailParam, codeParam]);
 
