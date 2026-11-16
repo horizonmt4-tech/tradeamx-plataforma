@@ -308,8 +308,8 @@ const DepositPage = () => {
   const [bankDetails, setBankDetails] = useState(null);
 
   const [form, setForm] = useState({
-    full_name: "", phone_number: "", date_of_birth: "", country: "", nationality: "",
-  });
+  full_name: "", phone_number: "", country: "", nationality: "",
+});
 
   const [selectedEfectivo, setSelectedEfectivo] = useState(null);
   const [copiedKey, setCopiedKey]     = useState(null);
@@ -367,21 +367,41 @@ const DepositPage = () => {
     if (refreshUser) await refreshUser();
     setScreen("kyc_step2");
   };
-
+  
   const saveStep2 = async () => {
-    if (!form.country || !form.date_of_birth) {
-      toast({ title: "Selecciona tu país y fecha de nacimiento", variant: "destructive" }); return;
+    if (!form.country) {
+      toast({ title: "Selecciona tu país", variant: "destructive" });
+      return;
     }
+
     setSaving(true);
+
     const { error } = await supabase.from("profiles")
-      .update({ country: form.country, date_of_birth: form.date_of_birth, nationality: form.nationality, kyc_step: 2, kyc_completed: true })
+      .update({
+        country: form.country,
+        nationality: form.nationality,
+        kyc_step: 2,
+        kyc_completed: true
+      })
       .eq("id", user.id);
+
     setSaving(false);
-    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (refreshUser) await refreshUser();
+
     setLocCountry(form.country);
     setScreen("methods");
   };
+
 
   // ── Submit comprobante ────────────────────────────────────────────────────
   const handleProofSubmit = async (method) => {
@@ -473,17 +493,12 @@ const DepositPage = () => {
                     ))}
                   </div>
                 </div>
-                <div>
-                  <Label className="text-xs text-gray-400 mb-1.5 block">Fecha de nacimiento</Label>
-                  <Input type="date" value={form.date_of_birth}
-                    onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))}
-                    className="bg-slate-900 border-slate-600 text-white h-11" />
-                </div>
+                
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => setScreen("kyc_step1")} className="border-slate-600 text-gray-300 h-12 px-4">
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <Button onClick={saveStep2} disabled={saving || !form.country || !form.date_of_birth}
+                  <Button onClick={saveStep2} disabled={saving || !form.country}
                     className="flex-1 h-12 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold">
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><span>Ver métodos de pago</span><ChevronRight className="w-4 h-4 ml-1" /></>}
                   </Button>
