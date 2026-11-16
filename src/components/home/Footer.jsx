@@ -98,7 +98,7 @@ const Footer = () => {
             <ul className="space-y-3">
                <li><Link to="/faq" className="text-gray-400 hover:text-[#d4af37] text-sm transition-colors">FAQ</Link></li>
                <li><Link to="/contact" className="text-gray-400 hover:text-[#d4af37] text-sm transition-colors">Help Center</Link></li>
-               <li><a href="mailto:support@tradeamx.com" className="text-gray-400 hover:text-[#d4af37] text-sm transition-colors">support@tradeamx.com</a></li>
+               <li><a href="mailto:support@tradeamx.com" className="text-gray-400 hover:text-[#d4af37] text-sm transition-colors">help@tradeamx.com</a></li>
             </ul>
           </div>
         </div>
