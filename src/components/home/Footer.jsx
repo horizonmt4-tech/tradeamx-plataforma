@@ -88,7 +88,16 @@ const Footer = () => {
                <li><Link to="/risk-disclosure" className="text-gray-400 hover:text-[#d4af37] text-sm transition-colors">Risk Disclosure</Link></li>
                <li><Link to="/cookies" className="text-gray-400 hover:text-[#d4af37] text-sm transition-colors">Cookie Policy</Link></li>
                <li><Link to="/aml-kyc" className="text-gray-400 hover:text-[#d4af37] text-sm transition-colors">AML & KYC</Link></li>
-               <li><Link to="/regulacion" className="text-gray-400 hover:text-[#d4af37] text-sm transition-colors">Información Legal y Regulatoria</Link></li>
+              <li>
+  <a
+    href="https://register.fca.org.uk/s/firm?id=0010X00004Sc7prQAB"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-gray-400 hover:text-[#d4af37] text-sm transition-colors"
+  >
+    Información Legal y Regulatoria
+  </a>
+</li>
             </ul>
           </div>
 
