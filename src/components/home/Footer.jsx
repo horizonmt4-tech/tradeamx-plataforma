@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShieldCheck, Mail, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { scrollToSection } from '@/lib/utils';
 
