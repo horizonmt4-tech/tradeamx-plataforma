@@ -39,8 +39,7 @@ const SignUpPage = () => {
     fetchPlanDetails(planId);
   }
 }, [sessionId, planId, emailParam]);
-    }
-  }, [sessionId, planId, emailParam, codeParam]);
+    
 
   const fetchPlanDetails = async (id) => {
     try {
@@ -50,15 +49,6 @@ const SignUpPage = () => {
     } catch (err) {
       console.error("Failed to fetch plan", err);
     }
-  };
-
-  // Validar código de invitación cuando el usuario termina de escribirlo
-  const handleCodeBlur = async () => {
-    if (!invitationCode.trim()) { setCodeStatus(null); return; }
-    const { data } = await supabase.rpc('validate_invitation_code', {
-      p_code: invitationCode.trim().toUpperCase(),
-    });
-    setCodeStatus(data ? 'valid' : 'invalid');
   };
 
   const handleSignUp = async (e) => {
@@ -72,20 +62,20 @@ const SignUpPage = () => {
       if (password !== confirmPassword) throw new Error('Las contraseñas no coinciden.');
       if (password.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres.');
 
-      // Resolver office_id desde el código de invitación (si lo pusieron)
-      let office_id = null;
-      if (invitationCode.trim()) {
-        const { data: oid } = await supabase.rpc('validate_invitation_code', {
-          p_code: invitationCode.trim().toUpperCase(),
-        });
-        if (!oid) throw new Error('El código de invitación no es válido o ya expiró.');
-        office_id = oid;
-      } else {
-        // Sin código → oficina default TaurusFX
-        const { data: offices } = await supabase
-          .from('offices').select('id').eq('code', 'TAURUXFX').single();
-        office_id = offices?.id || null;
-      }
+      // Asignar automáticamente la oficina predeterminada TaurusFX
+let office_id = null;
+
+const { data: offices, error: officeError } = await supabase
+  .from('offices')
+  .select('id')
+  .eq('code', 'TAURUXFX')
+  .single();
+
+if (officeError) {
+  console.error('Error al obtener oficina predeterminada:', officeError);
+}
+
+office_id = offices?.id || null;
 
       // 1. Crear usuario en Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -200,36 +190,6 @@ const SignUpPage = () => {
                   value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
                   className="bg-slate-800/50 border-gray-600 text-white placeholder:text-gray-500 focus:border-green-500"
                   required minLength={6} />
-              </div>
-
-              {/* ── Código de invitación (opcional) ── */}
-              <div className="space-y-2">
-                <Label htmlFor="invitationCode" className="text-gray-200 flex items-center gap-1.5">
-                  <Ticket className="w-3.5 h-3.5" />
-                  Código de invitación
-                  <span className="text-gray-500 font-normal">(opcional)</span>
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="invitationCode"
-                    type="text"
-                    placeholder="Ej. TAURUX2026"
-                    value={invitationCode}
-                    onChange={(e) => { setInvitationCode(e.target.value.toUpperCase()); setCodeStatus(null); }}
-                    onBlur={handleCodeBlur}
-                    className={`bg-slate-800/50 border-gray-600 text-white placeholder:text-gray-500 uppercase tracking-widest
-                      ${codeStatus === 'valid'   ? 'border-green-500 focus:border-green-500' : ''}
-                      ${codeStatus === 'invalid' ? 'border-red-500 focus:border-red-500'     : ''}
-                    `}
-                  />
-                  {codeStatus === 'valid' && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400 text-xs font-medium">✓ Válido</span>
-                  )}
-                  {codeStatus === 'invalid' && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-red-400 text-xs font-medium">✗ Inválido</span>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500">Si alguien te refirió, ingresa su código de invitación.</p>
               </div>
 
               <div className="text-xs text-gray-500 mt-2 space-y-1">
