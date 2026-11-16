@@ -265,21 +265,7 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
         )}
       </div>
 
-      {/* ── BID / ASK ── */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <div className="bg-red-950/30 border border-red-500/20 rounded-lg p-2.5 text-center">
-          <span className="block text-[9px] font-bold text-red-400 uppercase tracking-widest mb-0.5">Venta (Bid)</span>
-          <span className="block text-xl font-bold font-mono text-white">
-            {bidPrice > 0 ? bidPrice.toFixed(precision) : '—'}
-          </span>
-        </div>
-        <div className="bg-green-950/30 border border-green-500/20 rounded-lg p-2.5 text-center">
-          <span className="block text-[9px] font-bold text-green-400 uppercase tracking-widest mb-0.5">Compra (Ask)</span>
-          <span className="block text-xl font-bold font-mono text-white">
-            {askPrice > 0 ? askPrice.toFixed(precision) : '—'}
-          </span>
-        </div>
-      </div>
+     
 
       {spread > 0 && (
         <div className="flex justify-center mb-3">
@@ -316,14 +302,10 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
       </div>
 
       {/* ── Margen requerido + Apalancamiento ── */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
+      <div className="mb-3">
         <div className="bg-zinc-900/50 rounded-lg p-2 border border-zinc-700/50">
           <span className="block text-[9px] text-gray-500 uppercase tracking-wide mb-0.5">Margen req.</span>
           <span className="block text-sm font-bold font-mono text-white">${marginRequired.toFixed(2)}</span>
-        </div>
-        <div className="bg-zinc-900/50 rounded-lg p-2 border border-zinc-700/50">
-          <span className="block text-[9px] text-gray-500 uppercase tracking-wide mb-0.5">Apalancamiento</span>
-          <span className="block text-sm font-bold font-mono text-[#d6ad41]">1:{leverage}</span>
         </div>
       </div>
 
