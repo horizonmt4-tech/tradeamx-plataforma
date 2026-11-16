@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabaseClient';
-import { Loader2, ArrowLeft, TrendingUp, CheckCircle, Lock } from 'lucide-react';
+import { Loader2, ArrowLeft, TrendingUp, CheckCircle } from 'lucide-react';
 import PaymentConfirmationBadge from '@/components/PaymentConfirmationBadge';
 
 const SignUpPage = () => {
@@ -28,7 +28,7 @@ const SignUpPage = () => {
   const sessionId  = searchParams.get('session_id');
   const planId     = searchParams.get('plan_id');
   const emailParam = searchParams.get('email');
-  // Soporte para código en URL: /register?code=TAURUX2026
+  
   
 
   useEffect(() => {
