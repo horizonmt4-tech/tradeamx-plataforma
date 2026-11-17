@@ -131,8 +131,9 @@ const AnalysisPage = () => {
 
       await handleRefresh();
     } catch (err) {
-      toast({ title: 'Error', description: err.message || 'No se pudo abrir la operación', variant: 'destructive' });
-    }
+  toast({ title: 'Error', description: err.message || 'No se pudo abrir la operación', variant: 'destructive' });
+  throw err;
+}
   }, [user, selectedAsset, handleRefresh, toast]);
 
   const handleCloseTrade = useCallback(async (trade) => {
