@@ -104,13 +104,13 @@ const TradingPanel = ({ assets = [], onOpenTrade, selectedSymbol, setSelectedSym
   const changePercent = basePrice > 0 && midPrice > 0 ? ((midPrice - basePrice) / basePrice) * 100 : 0;
   const isPositive    = changePercent >= 0;
 
-  const contractSize = getContractSizeBySymbol(selectedSymbol);
+  const contractSize = Number(selectedAsset?.contract_size) || 0;
   const assetType    = selectedSymbol ? getAssetType(selectedSymbol) : AssetTypes.FOREX;
   const isStock      = assetType === AssetTypes.STOCK;
   const minLotSize   = isStock ? 1 : 0.01;
   const stepValue    = isStock ? '1' : '0.01';
   const precision    = selectedAsset?.precision || 5;
-  const leverage     = selectedAsset?.leverage || 100;
+  const leverage = Number(selectedAsset?.leverage) || 0;
 
   useEffect(() => {
     if (lotSize !== '' && Number(lotSize) < minLotSize) setLotSize(minLotSize);
